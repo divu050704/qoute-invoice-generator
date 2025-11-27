@@ -11,36 +11,30 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeftIcon, CheckIcon } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import Colors from "../../colors";
+import Colors from "../../../colors";
 import { useState, useEffect } from "react";
+import addAndSave from "../../../utils/addAndSave";
 
-export default function AddSupplier({ navigation, route }) {
-  const { supplierDetails, onSave } = route.params || {};
+export default function AddContactPerson({ navigation, route }) {
+  const { contactPersonDetails, onSave } = route.params || {};
 
   const [formData, setFormData] = useState({
-    gstin: "",
-    firmName: "",
-    pancard: "",
+    name: "",
     email: "",
-    mobile: "",
-    address: "",
-    city: "",
-    state: "",
-    pincode: "",
-    image: "",
+    phone: "",
   });
 
   // Load existing supplier details if editing
   useEffect(() => {
-    if (supplierDetails) {
-      setFormData(supplierDetails);
+    if (contactPersonDetails) {
+      setFormData(contactPersonDetails);
     }
-  }, [supplierDetails]);
+  }, [contactPersonDetails]);
 
   const handleSave = () => {
     // Validate required fields
-    if (!formData.firmName.trim()) {
-      alert("Please enter firm name");
+    if (!formData.name.trim()) {
+      alert("Please enter full name");
       return;
     }
 
@@ -49,39 +43,56 @@ export default function AddSupplier({ navigation, route }) {
       onSave(formData);
     }
 
+    addAndSave({
+          propertyName: "contactPersons",
+          newValue: formData,
+          propertyCheck: "phone",
+        });
+
     // Navigate back
-    navigation.goBack();
+    navigation.pop(2);
   };
 
+
   const inputFields = [
-    { key: "firmName", label: "Firm Name", placeholder: "Enter firm name", required: true },
-    { key: "gstin", label: "GSTIN", placeholder: "Enter GSTIN", maxLength: 15 },
-    { key: "pancard", label: "PAN Card", placeholder: "Enter PAN number", maxLength: 10 },
-    { key: "email", label: "Email", placeholder: "Enter email address", keyboardType: "email-address" },
-    { key: "mobile", label: "Mobile", placeholder: "Enter mobile number", keyboardType: "phone-pad", maxLength: 10 },
-    { key: "address", label: "Address", placeholder: "Enter address" },
-    { key: "city", label: "City", placeholder: "Enter city" },
-    { key: "state", label: "State", placeholder: "Enter state" },
-    { key: "pincode", label: "Pincode", placeholder: "Enter pincode", keyboardType: "numeric", maxLength: 6 },
+    {
+      key: "name",
+      label: "Full Name",
+      placeholder: "Enter conatact person's name",
+      required: true,
+    },
+    {
+      key: "email",
+      label: "Email",
+      placeholder: "Enter email address",
+      keyboardType: "email-address",
+    },
+    {
+      key: "phone",
+      label: "phone",
+      placeholder: "Enter phone number",
+      keyboardType: "phone-pad",
+      maxLength: 10,
+    },
   ];
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor={Colors.accentGreen} />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <SafeAreaView edges={['top']}>
+        <SafeAreaView edges={["top"]}>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
               activeOpacity={0.7}
             >
               <ArrowLeftIcon size={24} color={Colors.white} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Supplier Details</Text>
-            <TouchableOpacity 
+            <Text style={styles.headerTitle}>Contact Details</Text>
+            <TouchableOpacity
               onPress={handleSave}
               style={styles.saveIconButton}
               activeOpacity={0.7}
@@ -103,7 +114,6 @@ export default function AddSupplier({ navigation, route }) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-          bounces={false}
         >
           <View style={styles.formCard}>
             {inputFields.map((field, index) => (
@@ -126,24 +136,28 @@ export default function AddSupplier({ navigation, route }) {
                     placeholderTextColor="#999"
                     keyboardType={field.keyboardType || "default"}
                     maxLength={field.maxLength}
-                    autoCapitalize={field.keyboardType === "email-address" ? "none" : "words"}
+                    autoCapitalize={
+                      field.keyboardType === "email-address" ? "none" : "words"
+                    }
                   />
                 </View>
-                {index < inputFields.length - 1 && <View style={styles.divider} />}
+                {index < inputFields.length - 1 && (
+                  <View style={styles.divider} />
+                )}
               </View>
             ))}
           </View>
 
-          <TouchableOpacity 
-            style={styles.saveButton} 
+          <TouchableOpacity
+            style={styles.saveButton}
             onPress={handleSave}
             activeOpacity={0.8}
           >
             <CheckIcon size={20} color="#fff" strokeWidth={2.5} />
-            <Text style={styles.saveButtonText}>Save Supplier Details</Text>
+            <Text style={styles.saveButtonText}>Save Contact Details</Text>
           </TouchableOpacity>
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 20 }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -153,14 +167,14 @@ export default function AddSupplier({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: "#fafafa",
   },
   header: {
     backgroundColor: Colors.accentGreen,
     paddingHorizontal: 20,
     paddingBottom: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -175,17 +189,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveIconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     color: Colors.white,
@@ -198,14 +212,13 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
-    flexGrow: 1,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -216,37 +229,37 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
+    fontWeight: "600",
+    color: "#555",
     marginBottom: 8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   required: {
-    color: '#e74c3c',
+    color: "#e74c3c",
     fontSize: 14,
   },
   input: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e8e8e8',
+    borderColor: "#e8e8e8",
   },
   divider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   saveButton: {
     backgroundColor: Colors.accentGreen,
     borderRadius: 16,
     padding: 18,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 10,
     elevation: 3,
     shadowColor: Colors.accentGreen,
@@ -255,9 +268,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   saveButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
 });

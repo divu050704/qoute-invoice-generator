@@ -1,21 +1,80 @@
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeftIcon, SearchIcon, XIcon } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import Colors from "../colors";
-import { useState } from "react";
+import { getItemAsync } from "expo-secure-store";
 
 export default function QuotationsScreen({ navigation }) {
   const [search, setSearch] = useState("");
+  const [savedQuotations, setSavedQuotations] = useState([]);
+
+  async function getSavedQuotations() {
+    try {
+      const raw = await getItemAsync("quotation");
+      const quotations = raw ? JSON.parse(raw) : [];
+      setSavedQuotations(Array.isArray(quotations) ? quotations : []);
+    } catch (err) {
+      console.warn("Failed reading quotations:", err);
+      setSavedQuotations([]);
+    }
+  }
+
+  useEffect(() => {
+    getSavedQuotations();
+    // If you want to refresh when this screen focuses, add a focus listener instead.
+  }, []);
+
+  const formatDate = (d) => {
+    if (!d) return "";
+    const dt = new Date(d);
+    if (isNaN(dt)) return d; // fallback if already formatted string
+    return dt.toLocaleDateString();
+  };
+
+  const filtered = (savedQuotations || []).filter((q) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    const company = q?.buyerDetails?.companyName?.toLowerCase() || "";
+    const prefix = `${q?.quotationPrefix || ""}-${q?.quotationNumber || ""}`.toLowerCase();
+    const date = (q?.quotationDate || "").toLowerCase();
+    return company.includes(s) || prefix.includes(s) || date.includes(s);
+  });
+
+  const QuotationComponent = ({ quotation }) => {
+    const company = quotation?.buyerDetails?.companyName || "Unknown company";
+    const date = formatDate(quotation?.quotationDate);
+    const ref = `${quotation?.quotationPrefix || "QN"}-${quotation?.quotationNumber ?? ""}`;
+
+    return (
+      <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => navigation.navigate("ViewQuotation", {data: quotation})}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.companyName} numberOfLines={1}>
+            {company}
+          </Text>
+          <Text style={styles.dateText}>{date}</Text>
+        </View>
+
+        <View style={styles.cardBody}>
+          <Text style={styles.refText}>{ref}</Text>
+          <Text style={styles.smallText} numberOfLines={2}>
+            {quotation?.buyerDetails?.address || ""}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <View>
+    <View style={styles.container}>
       <StatusBar style="dark" backgroundColor={Colors.accentGreen} />
 
       <SafeAreaView>
@@ -24,12 +83,15 @@ export default function QuotationsScreen({ navigation }) {
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <TouchableOpacity onPress={() => navigation.goBack()}>
-                  <ArrowLeftIcon color={Colors.white} />
+                <ArrowLeftIcon color={Colors.white} />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Quotations</Text>
             </View>
 
-            <TouchableOpacity style={styles.createBtn} onPress={() => navigation.navigate("CreateQuotation")}>
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => navigation.navigate("CreateQuotation")}
+            >
               <Text style={styles.createBtnText}>+ Create New</Text>
             </TouchableOpacity>
           </View>
@@ -39,7 +101,7 @@ export default function QuotationsScreen({ navigation }) {
             <SearchIcon color="#666" size={18} />
 
             <TextInput
-              placeholder="Search"
+              placeholder="Search (company, ref or date)"
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#666"
@@ -54,17 +116,39 @@ export default function QuotationsScreen({ navigation }) {
             )}
           </View>
         </View>
+
+        <ScrollView style={styles.list} contentContainerStyle={{ padding: 16 }}>
+          {filtered.length === 0 ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                No quotations found. Create a new quotation to get started.
+              </Text>
+            </View>
+          ) : (
+            filtered.map((q, idx) => (
+              <QuotationComponent
+                key={q.id ?? `${idx}-${q?.quotationNumber ?? ""}`}
+                quotation={q}
+                onPress={() =>
+                  navigation.navigate("QuotationDetail", { quotation: q })
+                }
+              />
+            ))
+          )}
+        </ScrollView>
       </SafeAreaView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: Colors.backgroundLight || "#fff" },
+
   header: {
     backgroundColor: Colors.accentGreen,
     paddingHorizontal: 16,
-    paddingTop: 18,         
-    paddingBottom: 20,     
+    paddingTop: 18,
+    paddingBottom: 20,
     elevation: 8,
     borderBottomLeftRadius: 14,
     borderBottomRightRadius: 14,
@@ -74,7 +158,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,      
+    marginBottom: 16,
   },
 
   headerLeft: {
@@ -87,6 +171,7 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 20,
     fontWeight: "700",
+    marginLeft: 8,
   },
 
   createBtn: {
@@ -117,6 +202,72 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.black,
     paddingVertical: 5,
-  
+  },
+
+  list: {
+    marginTop: 8,
+  },
+
+  card: {
+    backgroundColor: Colors.white,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  companyName: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.accentGreen,
+    flex: 1,
+  },
+
+  dateText: {
+    fontSize: 12,
+    color: "#666",
+    marginLeft: 8,
+  },
+
+  cardBody: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  refText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+
+  smallText: {
+    fontSize: 12,
+    color: "#666",
+    maxWidth: "60%",
+    textAlign: "right",
+  },
+
+  empty: {
+    padding: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyText: {
+    color: "#666",
+    fontSize: 14,
+    textAlign: "center",
   },
 });

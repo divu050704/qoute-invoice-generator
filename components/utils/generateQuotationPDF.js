@@ -1,7 +1,6 @@
-import React from 'react';
 import { Alert, Platform, PermissionsAndroid } from 'react-native';
 import { generatePDF } from 'react-native-html-to-pdf';
-import RNFS from 'react-native-fs';
+import Colors from '../colors';
 
 // Function to request storage permissions
 const requestStoragePermission = async () => {
@@ -32,7 +31,7 @@ const requestStoragePermission = async () => {
 };
 
 // Function to generate HTML content
-const generateHTML = (data) => {
+export const generateHTML = (data) => {
   const {
     quotationDate,
     quotationPrefix,
@@ -224,13 +223,8 @@ export const generateQuotationPDF = async (quotationData) => {
     const htmlContent = generateHTML(quotationData);
 
     // Define file name
-    const fileName = `Quotation_${quotationData.quotationPrefix}${quotationData.quotationNumber}_${Date.now()}.pdf`;
+    const fileName = `Quotation_${quotationData.quotationPrefix}${quotationData.quotationNumber}_${Date.now()}`;
     
-    // Get Downloads directory path
-    const downloadsPath = Platform.OS === 'ios' 
-      ? RNFS.DocumentDirectoryPath 
-      : `${RNFS.ExternalStorageDirectoryPath}/Download`;
-
     // Generate PDF
     const options = {
       html: htmlContent,
@@ -240,107 +234,11 @@ export const generateQuotationPDF = async (quotationData) => {
     };
 
     const file = await generatePDF(options);
-    
-    // For Android, move the file to Downloads if needed
-    const finalPath = Platform.OS === 'android' 
-      ? `${downloadsPath}/${fileName}`
-      : file.filePath;
 
-    if (Platform.OS === 'android' && file.filePath !== finalPath) {
-      await RNFS.moveFile(file.filePath, finalPath);
-    }
-
-    Alert.alert(
-      'Success',
-      `PDF saved to ${Platform.OS === 'ios' ? 'Documents' : 'Downloads'} folder`,
-      [
-        {
-          text: 'Open',
-          onPress: () => {
-            // Open PDF using file viewer
-            const path = Platform.OS === 'ios' ? file.filePath : finalPath;
-            if (Platform.OS === 'android') {
-              const FileViewer = require('react-native-file-viewer').default;
-              FileViewer.open(path, { showOpenWithDialog: true })
-                .catch(err => {
-                  Alert.alert('Error', 'Could not open PDF file');
-                  console.error(err);
-                });
-            }
-          }
-        },
-        { text: 'OK' }
-      ]
-    );
-
-    return finalPath;
+    return file    
   } catch (error) {
     console.error('Error generating PDF:', error);
     Alert.alert('Error', 'Failed to generate PDF: ' + error.message);
     return null;
   }
 };
-
-// // Example usage component
-// const QuotationPDFExample = () => {
-//   const handleGeneratePDF = async () => {
-//     const sampleData = {
-//       quotationDate: new Date().toLocaleDateString(),
-//       quotationPrefix: "QT-",
-//       quotationNumber: 1,
-//       supplierDetails: {
-//         gstin: "29ABCDE1234F1Z5",
-//         firmName: "ABC Enterprises",
-//         pancard: "ABCDE1234F",
-//         email: "supplier@example.com",
-//         mobile: "+91 9876543210",
-//         address: "123 Business Street",
-//         city: "Bangalore",
-//         state: "Karnataka",
-//         pincode: "560001",
-//         image: "",
-//       },
-//       buyerDetails: {
-//         gstin: "27XYZAB5678G1H9",
-//         companyName: "XYZ Corp",
-//         email: "buyer@example.com",
-//         mobileNumber: "+91 9123456780",
-//         address: "456 Corporate Avenue",
-//         city: "Mumbai",
-//         pincode: "400001",
-//         state: "Maharashtra",
-//         gstTreatmentType: "Registered Business",
-//       },
-//       contactPersonDetails: {
-//         name: "John Doe",
-//         email: "john@example.com",
-//         phone: "+91 9876543211",
-//       },
-//       productDetails: [{
-//         id: Date.now().toString(),
-//         productName: "Product A",
-//         description: "High quality product",
-//         quantity: "10",
-//         hsn: "1234",
-//         unitPrice: "1000",
-//         unit: "PCS",
-//         amount: 10000,
-//         discount: "10",
-//         discountType: "percent",
-//         taxableAmount: 9000,
-//         taxInclusive: false,
-//         gstRate: "18",
-//         cess: "",
-//         cessType: "percent",
-//         totalAmount: 10620,
-//       }],
-//       termsAndConditions: `1. Payment within 30 days\n2. Goods once sold will not be taken back`,
-//     };
-
-//     await generateQuotationPDF(sampleData);
-//   };
-
-//   return null; // This is just a utility, call handleGeneratePDF when needed
-// };
-
-// export default QuotationPDFExample;

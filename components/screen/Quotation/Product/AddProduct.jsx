@@ -17,12 +17,13 @@ import {
   SearchIcon 
 } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import Colors from "../../colors";
+import Colors from "../../../colors";
 import { useState, useEffect } from "react";
 import { Picker } from '@react-native-picker/picker';
+import addAndSave from "../../../utils/addAndSave";
 
 export default function AddProducts({ navigation, route }) {
-  const { productDetails, onSave } = route.params || {};
+  const { productDetails, onSave, productIndex } = route.params || {};
 
   const [product, setProduct] = useState({
     id: Date.now().toString(),
@@ -104,12 +105,14 @@ export default function AddProducts({ navigation, route }) {
       Alert.alert("Validation Error", "Please enter a product name");
       return;
     }
+        addAndSave({propertyName: "products", newValue: product, propertyCheck: "productName"})
+    
 
     if (onSave) {
       onSave(product);
     }
 
-    navigation.goBack();
+    productIndex !== undefined ? navigation.goBack() :navigation.pop(2);
   };
 
   return (

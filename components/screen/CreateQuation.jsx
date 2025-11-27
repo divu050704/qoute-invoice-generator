@@ -25,8 +25,9 @@ import Colors from "../colors";
 import { useState, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
 import { generateQuotationPDF } from "../utils/generateQuotationPDF";
+import addAndSave from "../utils/addAndSave";
 
-export default function CreateQuotation({ navigation }) {
+export default function CreateQuotation({ navigation, route }) {
   const [buttonEnable, setButtonEnabled] = useState(false);
   const [inputData, setInputData] = useState({
     quotationDate: "",
@@ -160,7 +161,7 @@ export default function CreateQuotation({ navigation }) {
   };
 
   const editProduct = (product, index) => {
-    navigation.navigate("AddProducts", {
+    navigation.navigate("AddProduct", {
       productDetails: product,
       productIndex: index,
       onSave: (updatedProduct) => {
@@ -196,6 +197,7 @@ export default function CreateQuotation({ navigation }) {
     );
   };
 
+
   const ProductDetailsCard = () => (
     <View style={styles.cardContainer}>
       <View style={styles.cardHeader}>
@@ -219,7 +221,6 @@ export default function CreateQuotation({ navigation }) {
                     ₹{product.totalAmount?.toFixed(2) || "0.00"}
                   </Text>
                 </View>
-                <EditIcon size={18} color={Colors.accentGreen} />
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.productDeleteButton}
@@ -235,7 +236,18 @@ export default function CreateQuotation({ navigation }) {
 
       <TouchableOpacity
         style={styles.addProductButton}
-        onPress={addNewProduct}
+        onPress={() => {
+            navigation.navigate("SelectProduct", {
+              productDetails: inputData.productDetails,
+              onSave: (updatedProductDetails) => {
+                
+                setInputData((prev) => ({
+                  ...prev,
+                  productDetails: [...prev.productDetails, updatedProductDetails],
+                }));
+              },
+            });
+          }}
         activeOpacity={0.7}
       >
         <View style={styles.addButtonIcon}>
@@ -256,6 +268,12 @@ export default function CreateQuotation({ navigation }) {
     };
     setButtonEnabled(isFilled(inputData));
   }, [inputData]);
+
+  useEffect(() => {
+    if (route.params){
+      setInputData(route.params.inputData)
+    }
+  }, [])
 
   return (
     <View style={styles.container}>
@@ -319,7 +337,7 @@ export default function CreateQuotation({ navigation }) {
           isEmpty={inputData.supplierDetails.firmName === ""}
           data={inputData.supplierDetails}
           onPress={() => {
-            navigation.navigate("AddSupplier", {
+            navigation.navigate("SelectSupplier", {
               supplierDetails: inputData.supplierDetails,
               onSave: (updatedSupplier) => {
                 setInputData((prev) => ({
@@ -337,7 +355,7 @@ export default function CreateQuotation({ navigation }) {
           title="Buyer Details"
           isEmpty={inputData.buyerDetails.companyName === ""}
           onPress={() => {
-            navigation.navigate("AddBuyer", {
+            navigation.navigate("SelectBuyer", {
               buyerDetails: inputData.buyerDetails,
               onSave: (updatedBuyer) => {
                 setInputData((prev) => ({
@@ -356,7 +374,7 @@ export default function CreateQuotation({ navigation }) {
           isEmpty={inputData.contactPersonDetails.name === ""}
           icon={UserPlus}
           onPress={() => {
-            navigation.navigate("AddContactPerson", {
+            navigation.navigate("SelectContactPerson", {
               contactPersonDetails: inputData.contactPersonDetails,
               onSave: (updatedContactPersonDetails) => {
                 setInputData((prev) => ({
@@ -396,7 +414,8 @@ export default function CreateQuotation({ navigation }) {
           onPress={async () => {
             try{
               setButtonEnabled(false)
-            await generateQuotationPDF(inputData);
+              addAndSave({propertyName: "quotation", newValue: inputData, propertyCheck: "quotationDate"})
+              navigation.navigate("ViewQuotation", {data: inputData})
             }
             catch(e){
               Alert.alert("An error occured:", e)

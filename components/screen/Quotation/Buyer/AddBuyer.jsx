@@ -11,9 +11,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ArrowLeftIcon, CheckIcon, ChevronDownIcon } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
-import Colors from "../../colors";
+import Colors from "../../../colors";
 import { useState, useEffect } from "react";
-import { Picker } from '@react-native-picker/picker';
+import { Picker } from "@react-native-picker/picker";
+import addAndSave from "../../../utils/addAndSave";
 
 export default function AddBuyer({ navigation, route }) {
   const { buyerDetails, onSave } = route.params || {};
@@ -33,7 +34,10 @@ export default function AddBuyer({ navigation, route }) {
   const gstTreatmentTypes = [
     { label: "Select GST Treatment", value: "" },
     { label: "Registered Business - Regular", value: "registered_regular" },
-    { label: "Registered Business - Composition", value: "registered_composition" },
+    {
+      label: "Registered Business - Composition",
+      value: "registered_composition",
+    },
     { label: "Unregistered Business", value: "unregistered" },
     { label: "Consumer", value: "consumer" },
     { label: "Overseas", value: "overseas" },
@@ -58,31 +62,63 @@ export default function AddBuyer({ navigation, route }) {
     if (onSave) {
       onSave(formData);
     }
+    addAndSave({
+      propertyName: "buyers",
+      newValue: formData,
+      propertyCheck: "companyName",
+    });
 
     // Navigate back
-    navigation.goBack();
+    navigation.pop(2);
   };
 
   const inputFields = [
-    { key: "companyName", label: "Company Name", placeholder: "Enter company name", required: true },
-    { key: "gstin", label: "GSTIN", placeholder: "Enter GSTIN (optional)", maxLength: 15 },
-    { key: "email", label: "Email", placeholder: "Enter email address", keyboardType: "email-address" },
-    { key: "mobileNumber", label: "Mobile Number", placeholder: "Enter mobile number", keyboardType: "phone-pad", maxLength: 10 },
+    {
+      key: "companyName",
+      label: "Company Name",
+      placeholder: "Enter company name",
+      required: true,
+    },
+    {
+      key: "gstin",
+      label: "GSTIN",
+      placeholder: "Enter GSTIN (optional)",
+      maxLength: 15,
+    },
+    {
+      key: "email",
+      label: "Email",
+      placeholder: "Enter email address",
+      keyboardType: "email-address",
+    },
+    {
+      key: "mobileNumber",
+      label: "Mobile Number",
+      placeholder: "Enter mobile number",
+      keyboardType: "phone-pad",
+      maxLength: 10,
+    },
     { key: "address", label: "Address", placeholder: "Enter address" },
     { key: "city", label: "City", placeholder: "Enter city" },
     { key: "state", label: "State", placeholder: "Enter state" },
-    { key: "pincode", label: "Pincode", placeholder: "Enter pincode", keyboardType: "numeric", maxLength: 6 },
+    {
+      key: "pincode",
+      label: "Pincode",
+      placeholder: "Enter pincode",
+      keyboardType: "numeric",
+      maxLength: 6,
+    },
   ];
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor={Colors.accentGreen} />
-      
+
       {/* Header */}
       <View style={styles.header}>
-        <SafeAreaView edges={['top']}>
+        <SafeAreaView edges={["top"]}>
           <View style={styles.headerContent}>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
               activeOpacity={0.7}
@@ -90,7 +126,7 @@ export default function AddBuyer({ navigation, route }) {
               <ArrowLeftIcon size={24} color={Colors.white} />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Buyer Details</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleSave}
               style={styles.saveIconButton}
               activeOpacity={0.7}
@@ -134,13 +170,17 @@ export default function AddBuyer({ navigation, route }) {
                     placeholderTextColor="#999"
                     keyboardType={field.keyboardType || "default"}
                     maxLength={field.maxLength}
-                    autoCapitalize={field.keyboardType === "email-address" ? "none" : "words"}
+                    autoCapitalize={
+                      field.keyboardType === "email-address" ? "none" : "words"
+                    }
                   />
                 </View>
-                {index < inputFields.length - 1 && <View style={styles.divider} />}
+                {index < inputFields.length - 1 && (
+                  <View style={styles.divider} />
+                )}
               </View>
             ))}
-            
+
             {/* GST Treatment Type - Separate section */}
             <View style={styles.divider} />
             <View style={styles.inputContainer}>
@@ -158,9 +198,9 @@ export default function AddBuyer({ navigation, route }) {
                   dropdownIconColor="#666"
                 >
                   {gstTreatmentTypes.map((type) => (
-                    <Picker.Item 
-                      key={type.value} 
-                      label={type.label} 
+                    <Picker.Item
+                      key={type.value}
+                      label={type.label}
                       value={type.value}
                     />
                   ))}
@@ -169,8 +209,8 @@ export default function AddBuyer({ navigation, route }) {
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={styles.saveButton} 
+          <TouchableOpacity
+            style={styles.saveButton}
             onPress={handleSave}
             activeOpacity={0.8}
           >
@@ -188,14 +228,14 @@ export default function AddBuyer({ navigation, route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fafafa',
+    backgroundColor: "#fafafa",
   },
   header: {
     backgroundColor: Colors.accentGreen,
     paddingHorizontal: 20,
     paddingBottom: 16,
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -210,17 +250,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   saveIconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "rgba(255,255,255,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
     color: Colors.white,
@@ -235,11 +275,11 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
@@ -250,48 +290,48 @@ const styles = StyleSheet.create({
   },
   inputLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#555',
+    fontWeight: "600",
+    color: "#555",
     marginBottom: 8,
-    textTransform: 'uppercase',
+    textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   required: {
-    color: '#e74c3c',
+    color: "#e74c3c",
     fontSize: 14,
   },
   input: {
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e8e8e8',
+    borderColor: "#e8e8e8",
   },
   divider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   pickerContainer: {
-    backgroundColor: '#f8f8f8',
+    backgroundColor: "#f8f8f8",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#e8e8e8',
-    overflow: 'hidden',
+    borderColor: "#e8e8e8",
+    overflow: "hidden",
   },
   picker: {
     height: 50,
-    color: '#333',
+    color: "#333",
   },
   saveButton: {
     backgroundColor: Colors.accentGreen,
     borderRadius: 16,
     padding: 18,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
+    alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "center",
     gap: 10,
     elevation: 3,
     shadowColor: Colors.accentGreen,
@@ -300,9 +340,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   saveButtonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.5,
   },
 });
