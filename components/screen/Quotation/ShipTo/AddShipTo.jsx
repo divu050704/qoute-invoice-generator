@@ -15,8 +15,8 @@ import Colors from "../../../colors";
 import { useState, useEffect } from "react";
 import addAndSave from "../../../utils/addAndSave";
 
-export default function AddContactPerson({ navigation, route }) {
-  const { contactPersonDetails, onSave } = route.params || {};
+export default function AddShipTo({ navigation, route }) {
+  const { shipToDetails, onSave } = route.params || {};
 
   const [formData, setFormData] = useState({
     name: "",
@@ -26,10 +26,10 @@ export default function AddContactPerson({ navigation, route }) {
 
   // Load existing supplier details if editing
   useEffect(() => {
-    if (contactPersonDetails) {
-      setFormData(contactPersonDetails);
+    if (shipToDetails) {
+      setFormData(shipToDetails);
     }
-  }, [contactPersonDetails]);
+  }, [shipToDetails]);
 
   const handleSave = () => {
     // Validate required fields
@@ -44,7 +44,7 @@ export default function AddContactPerson({ navigation, route }) {
     }
 
     addAndSave({
-          propertyName: "contactPersons",
+          propertyName: "shipTos",
           newValue: formData,
           propertyCheck: "phone",
         });
@@ -91,7 +91,7 @@ export default function AddContactPerson({ navigation, route }) {
             >
               <ArrowLeftIcon size={24} color={Colors.white} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Contact Details</Text>
+            <Text style={styles.headerTitle}>Shipping Details</Text>
             <TouchableOpacity
               onPress={handleSave}
               style={styles.saveIconButton}
@@ -154,7 +154,7 @@ export default function AddContactPerson({ navigation, route }) {
             activeOpacity={0.8}
           >
             <CheckIcon size={20} color="#fff" strokeWidth={2.5} />
-            <Text style={styles.saveButtonText}>Save Contact Details</Text>
+            <Text style={styles.saveButtonText}>Save Shipping Details</Text>
           </TouchableOpacity>
 
           <View style={{ height: 20 }} />

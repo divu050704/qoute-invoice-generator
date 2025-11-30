@@ -16,20 +16,10 @@ import { useState, useEffect } from "react";
 import { Picker } from "@react-native-picker/picker";
 import addAndSave from "../../../utils/addAndSave";
 
-export default function AddBuyer({ navigation, route }) {
-  const { buyerDetails, onSave } = route.params || {};
+export default function AddTermsAndConditions({ navigation, route }) {
+  const { termsandconditionsDetails, onSave } = route.params || {};
 
-  const [formData, setFormData] = useState({
-    gstin: "",
-    companyName: "",
-    email: "",
-    mobileNumber: "",
-    address: "",
-    city: "",
-    pincode: "",
-    state: "",
-    gstTreatmentType: "",
-  });
+  const [formData, setFormData] = useState("");
 
   const gstTreatmentTypes = [
     { label: "Select GST Treatment", value: "" },
@@ -37,17 +27,17 @@ export default function AddBuyer({ navigation, route }) {
     { label: "Unregistered Business", value: "unregistered" },
   ];
 
-  // Load existing buyer details if editing
+  // Load existing termsandconditions details if editing
   useEffect(() => {
-    if (buyerDetails) {
-      setFormData(buyerDetails);
+    if (termsandconditionsDetails) {
+      setFormData(termsandconditionsDetails);
     }
-  }, [buyerDetails]);
+  }, [termsandconditionsDetails]);
 
   const handleSave = () => {
     // Validate required fields
-    if (!formData.companyName.trim()) {
-      alert("Please enter company name");
+    if (!formData.trim()) {
+      alert("Please enter terms and conditons");
       return;
     }
 
@@ -56,52 +46,16 @@ export default function AddBuyer({ navigation, route }) {
       onSave(formData);
     }
     addAndSave({
-      propertyName: "buyers",
+      propertyName: "termsandconditions",
       newValue: formData,
-      propertyCheck: "companyName",
+      propertyCheck: "termsandcontions",
     });
 
     // Navigate back
     navigation.pop(2);
   };
 
-  const inputFields = [
-    {
-      key: "companyName",
-      label: "Company Name",
-      placeholder: "Enter company name",
-      required: true,
-    },
-    {
-      key: "gstin",
-      label: "GSTIN",
-      placeholder: "Enter GSTIN (optional)",
-      maxLength: 15,
-    },
-    {
-      key: "email",
-      label: "Email",
-      placeholder: "Enter email address",
-      keyboardType: "email-address",
-    },
-    {
-      key: "mobileNumber",
-      label: "Mobile Number",
-      placeholder: "Enter mobile number",
-      keyboardType: "phone-pad",
-      maxLength: 10,
-    },
-    { key: "address", label: "Address", placeholder: "Enter address" },
-    { key: "city", label: "City", placeholder: "Enter city" },
-    { key: "state", label: "State", placeholder: "Enter state" },
-    {
-      key: "pincode",
-      label: "Pincode",
-      placeholder: "Enter pincode",
-      keyboardType: "numeric",
-      maxLength: 6,
-    },
-  ];
+  
 
   return (
     <View style={styles.container}>
@@ -118,7 +72,7 @@ export default function AddBuyer({ navigation, route }) {
             >
               <ArrowLeftIcon size={24} color={Colors.white} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Buyer Details</Text>
+            <Text style={styles.headerTitle}>T&C Details</Text>
             <TouchableOpacity
               onPress={handleSave}
               style={styles.saveIconButton}
@@ -143,63 +97,29 @@ export default function AddBuyer({ navigation, route }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.formCard}>
-            {inputFields.map((field, index) => (
-              <View key={field.key}>
+            
+              <View>
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>
-                    {field.label}
-                    {field.required && <Text style={styles.required}> *</Text>}
+                    Terms & Conditions
+                    {<Text style={styles.required}> *</Text>}
                   </Text>
                   <TextInput
+                  multiline={true}
                     style={styles.input}
-                    value={formData[field.key]}
+                    value={formData}
                     onChangeText={(text) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        [field.key]: text,
-                      }))
+                      setFormData(text)
                     }
-                    placeholder={field.placeholder}
+                    placeholder={"Enter terms and conditions"}
                     placeholderTextColor="#999"
-                    keyboardType={field.keyboardType || "default"}
-                    maxLength={field.maxLength}
-                    autoCapitalize={
-                      field.keyboardType === "email-address" ? "none" : "words"
-                    }
+                    keyboardType={"default"}
+                    
                   />
                 </View>
-                {index < inputFields.length - 1 && (
-                  <View style={styles.divider} />
-                )}
               </View>
-            ))}
+            
 
-            {/* GST Treatment Type - Separate section */}
-            <View style={styles.divider} />
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>GST TREATMENT TYPE</Text>
-              <View style={styles.pickerContainer}>
-                <Picker
-                  selectedValue={formData.gstTreatmentType}
-                  onValueChange={(itemValue) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      gstTreatmentType: itemValue,
-                    }))
-                  }
-                  style={styles.picker}
-                  dropdownIconColor="#666"
-                >
-                  {gstTreatmentTypes.map((type) => (
-                    <Picker.Item
-                      key={type.value}
-                      label={type.label}
-                      value={type.value}
-                    />
-                  ))}
-                </Picker>
-              </View>
-            </View>
           </View>
 
           <TouchableOpacity
@@ -208,7 +128,7 @@ export default function AddBuyer({ navigation, route }) {
             activeOpacity={0.8}
           >
             <CheckIcon size={20} color="#fff" strokeWidth={2.5} />
-            <Text style={styles.saveButtonText}>Save Buyer Details</Text>
+            <Text style={styles.saveButtonText}>Save T&C Details</Text>
           </TouchableOpacity>
 
           <View style={{ height: 20 }} />
@@ -302,6 +222,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e8e8e8",
+    height: 500,
+    textAlignVertical: "top"
   },
   divider: {
     height: 1,

@@ -18,97 +18,77 @@ import Colors from "../../../colors";
 import { useEffect, useMemo, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
 
-export default function SelectContactPerson({ navigation, route }) {
+export default function SelectTermsAndConditions({ navigation, route }) {
   const [search, setSearch] = useState("");
-  const { contactPersonDetails, onSave } = route.params || {};
-  const [savedContactPersons, setSavedContactPersons] = useState([]);
+  const { termsandconditionsDetails, onSave } = route.params || {};
+  const [savedTermsAndConditions, setSavedTermsAndConditions] = useState([]);
 
-  async function getExistingContactPersons() {
+  async function getExistingTermsAndConditions() {
     try {
-      const contactPersonJson = await getItemAsync("contactPersons");
-      if (!contactPersonJson) {
-        setSavedContactPersons([]);
+      const termsandconditionsJson = await getItemAsync("termsandconditions");
+      if (!termsandconditionsJson) {
+        setSavedTermsAndConditions([]);
         return;
       }
-      const parsed = JSON.parse(contactPersonJson);
-      if (Array.isArray(parsed)) setSavedContactPersons(parsed);
-      else setSavedContactPersons([]);
+
+      setSavedTermsAndConditions(JSON.parse(termsandconditionsJson));
     } catch (e) {
-      console.warn("Error parsing contactPersons from secure store", e);
-      setSavedContactPersons([]);
+      console.warn("Error parsing termsandconditions from secure store", e);
+      setSavedTermsAndConditions([]);
     }
   }
 
   useEffect(() => {
-    getExistingContactPersons();
+    getExistingTermsAndConditions();
   }, []);
 
-  async function persistContactPersons(list) {
+  async function persistTermsAndConditions(list) {
     try {
-      await setItemAsync("contactPersons", JSON.stringify(list || []));
+      await setItemAsync("termsandconditions", JSON.stringify(list || []));
     } catch (e) {
-      console.warn("Failed to persist contactPersons", e);
+      console.warn("Failed to persist termsandconditions", e);
     }
   }
 
-  const filteredContactPersons = useMemo(() => {
+  const filteredTermsAndConditions = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return savedContactPersons;
-    return savedContactPersons.filter((s) => {
+    if (!q) return savedTermsAndConditions;
+    return savedTermsAndConditions.filter((s) => {
       if (!s) return false;
-      const name = (s.name || "").toLowerCase();
-      const email = (s.email || "").toLowerCase();
-      const phone = (s.phone || "").toLowerCase();
-      return (
-        name.includes(q) || email.includes(q) || phone.includes(q) 
-      );
+      return s.includes(q);
     });
-  }, [search, savedContactPersons]);
+  }, [search, savedTermsAndConditions]);
 
-  const handleSelect = (contactPerson) => {
-    if (onSave) onSave(contactPerson);
+  const handleSelect = (termsandconditions) => {
+    if (onSave) onSave(termsandconditions);
     navigation.goBack();
   };
 
   // handle edit - open AddSupplier with initial data and update on save
-  const handleEdit = (contactPerson, originalIndex) => {
-    navigation.navigate("AddContactPerson", {
-      contactPersonDetails: contactPerson,
-      onSave: (savedContactPerson) => {
-        if (onSave) onSave(savedContactPerson);
+  const handleEdit = (termsandconditions, originalIndex) => {
+    navigation.navigate("AddTermsAndConditions", {
+      termsandconditionsDetails: termsandconditions,
+      onSave: (savedTermsAndConditions) => {
+        if (onSave) onSave(savedTermsAndConditions);
       },
     });
   };
 
-  const ContactPersonDetailsComponent = ({ data, index, originalIndex }) => (
+  const TermsAndConditionsDetailsComponent = ({
+    data,
+    index,
+    originalIndex,
+  }) => (
     <View
-      style={styles.contactPersonCard}
-      key={`${data?.firmName ?? "contactPerson"}-${index}`}
+      style={styles.termsandconditionsCard}
+      key={`${"termsandconditions"}-${index}`}
     >
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => handleSelect(data)}
-        style={styles.contactPersonTouchable}
+        style={styles.termsandconditionsTouchable}
       >
-        <View style={styles.contactPersonTop}>
-          <Text style={styles.firmName} numberOfLines={1}>
-            {data?.name || "—"}
-          </Text>
-          <Text style={styles.smallText}>{data?.state || ""}</Text>
-        </View>
-
-        <View style={styles.contactPersonRow}>
-          <View style={styles.contactPersonCol}>
-            <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{data?.email || "—"}</Text>
-          </View>
-
-          <View style={styles.contactPersonCol}>
-            <Text style={styles.label}>Phone</Text>
-            <Text style={styles.value}>{data?.phone || "—"}</Text>
-          </View>
-        </View>
-
+        <View style={styles.termsandconditionsTop}><Text>{data}</Text></View>
       </TouchableOpacity>
 
       {/* Edit button on the right/top */}
@@ -134,23 +114,23 @@ export default function SelectContactPerson({ navigation, route }) {
               <TouchableOpacity onPress={() => navigation.goBack()}>
                 <ArrowLeftIcon color={Colors.white} />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Select Contact Person</Text>
+              <Text style={styles.headerTitle}>Select T&C</Text>
             </View>
 
             <TouchableOpacity
               style={styles.createBtn}
               onPress={() => {
-                navigation.navigate("AddContactPerson", {
-                  onSave: (savedContactPerson) => {
+                navigation.navigate("AddTermsAndConditions", {
+                  onSave: (savedTermsAndConditions) => {
                     // add to list locally + call parent onSave if provided
-                    if (savedContactPerson) {
-                      setSavedContactPersons((prev) => {
-                        const next = [savedContactPerson, ...(prev || [])];
-                        persistContactPersons(next);
+                    if (savedTermsAndConditions) {
+                      setSavedTermsAndConditions((prev) => {
+                        const next = [savedTermsAndConditions, ...(prev || [])];
+                        persistTermsAndConditions(next);
                         return next;
                       });
                     }
-                    if (onSave) onSave(savedContactPerson);
+                    if (onSave) onSave(savedTermsAndConditions);
                   },
                 });
               }}
@@ -164,7 +144,7 @@ export default function SelectContactPerson({ navigation, route }) {
             <SearchIcon color="#666" size={18} />
 
             <TextInput
-              placeholder="Search name, email, phone..."
+              placeholder="Search terms & conditions..."
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#666"
@@ -184,30 +164,27 @@ export default function SelectContactPerson({ navigation, route }) {
           style={styles.listContainer}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         >
-          {filteredContactPersons.length === 0 ? (
+          {filteredTermsAndConditions.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No ContactPersons found</Text>
+              <Text style={styles.emptyTitle}>No Terms & Conditions found</Text>
               <Text style={styles.emptySub}>
-                {savedContactPersons.length === 0
-                  ? "You don't have any contactPersons yet. Add one using + Add."
+                {savedTermsAndConditions.length === 0
+                  ? "You don't have any terms & conditions yet. Add one using + Add."
                   : `No results for "${search}"`}
               </Text>
             </View>
           ) : (
-            filteredContactPersons.map((ele, i) => {
+            filteredTermsAndConditions.map((ele, i) => {
               // find original index in savedSuppliers to allow proper update
-              const originalIndex = savedContactPersons.findIndex(
-                (s) =>
-                  (ele.name && s.name === ele.name) ||
-                  (ele.phone && s.phone === ele.phone) ||
-                  (ele.email && s.firmName === ele.email)
+              const originalIndex = savedTermsAndConditions.findIndex(
+                (s) => ele && s === ele
               );
               return (
-                <ContactPersonDetailsComponent
+                <TermsAndConditionsDetailsComponent
                   data={ele}
                   index={i}
                   originalIndex={originalIndex}
-                  key={`contactPerson-${i}`}
+                  key={`termsandconditions-${i}`}
                 />
               );
             })
@@ -286,7 +263,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
 
-  contactPersonCard: {
+  termsandconditionsCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
@@ -304,11 +281,11 @@ const styles = StyleSheet.create({
     position: "relative",
   },
 
-  contactPersonTouchable: {
+  termsandconditionsTouchable: {
     // keep padding so content looks clickable
   },
 
-  contactPersonTop: {
+  termsandconditionsTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -328,17 +305,17 @@ const styles = StyleSheet.create({
     color: "#666",
   },
 
-  contactPersonRow: {
+  termsandconditionsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
 
-  contactPersonCol: {
+  termsandconditionsCol: {
     flex: 1,
     marginRight: 8,
   },
 
-  contactPersonColFull: {
+  termsandconditionsColFull: {
     flex: 1,
   },
 

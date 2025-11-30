@@ -8,6 +8,8 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -15,24 +17,22 @@ import {
   UserPlus,
   XIcon,
   Calendar as CalendarIcon,
-  FileText,
   PlusIcon,
   TrashIcon,
-  EditIcon,
 } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import Colors from "../colors";
 import { useState, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
-import { generateQuotationPDF } from "../utils/generateQuotationPDF";
 import addAndSave from "../utils/addAndSave";
+import { getItemAsync } from "expo-secure-store";
 
 export default function CreateQuotation({ navigation, route }) {
   const [buttonEnable, setButtonEnabled] = useState(false);
   const [inputData, setInputData] = useState({
     quotationDate: "",
     quotationPrefix: "",
-    quotationNumber: 1,
+    quotationNumber: "1",
     supplierDetails: {
       gstin: "",
       firmName: "",
@@ -56,47 +56,17 @@ export default function CreateQuotation({ navigation, route }) {
       state: "",
       gstTreatmentType: "",
     },
-    contactPersonDetails: {
+    shipToDetails: {
       name: "",
       email: "",
       phone: "",
     },
     productDetails: [],
-    termsAndConditions: `1. random
-2. random2`,
+    termsAndConditions: "",
   });
 
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  const HeaderData = ({ title, data, placeholder }) => (
-    <View style={styles.headerDataContainer}>
-      <Text style={styles.headerDataTitle}>{title}</Text>
-      {data !== "quotationDate" ? (
-        <TextInput
-          placeholder={placeholder}
-          placeholderTextColor="rgba(255,255,255,0.5)"
-          value={String(inputData[data] ?? "")}
-          onChangeText={(value) =>
-            setInputData((prev) => ({ ...prev, [data]: value }))
-          }
-          style={styles.headerDataInput}
-        />
-      ) : (
-        <TouchableOpacity
-          style={styles.dateButton}
-          onPress={() => setCalendarOpen(true)}
-          activeOpacity={0.7}
-        >
-          {inputData === "" && (
-            <CalendarIcon size={16} color="rgba(255,255,255,0.8)" />
-          )}
-          <Text style={styles.dateButtonText}>
-            {inputData[data] === "" ? placeholder : inputData[data]}
-          </Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+  const [shipToDetails, setShipToDetails] = useState("Not Required");
 
   const onDaySelect = (day) => {
     setInputData((prev) => ({ ...prev, quotationDate: day.dateString }));
@@ -148,18 +118,6 @@ export default function CreateQuotation({ navigation, route }) {
     </View>
   );
 
-  const addNewProduct = () => {
-    navigation.navigate("AddProducts", {
-      productDetails: null,
-      onSave: (newProduct) => {
-        setInputData((prev) => ({
-          ...prev,
-          productDetails: [...prev.productDetails, newProduct],
-        }));
-      },
-    });
-  };
-
   const editProduct = (product, index) => {
     navigation.navigate("AddProduct", {
       productDetails: product,
@@ -196,7 +154,6 @@ export default function CreateQuotation({ navigation, route }) {
       ]
     );
   };
-
 
   const ProductDetailsCard = () => (
     <View style={styles.cardContainer}>
@@ -237,17 +194,16 @@ export default function CreateQuotation({ navigation, route }) {
       <TouchableOpacity
         style={styles.addProductButton}
         onPress={() => {
-            navigation.navigate("SelectProduct", {
-              productDetails: inputData.productDetails,
-              onSave: (updatedProductDetails) => {
-                
-                setInputData((prev) => ({
-                  ...prev,
-                  productDetails: [...prev.productDetails, updatedProductDetails],
-                }));
-              },
-            });
-          }}
+          navigation.navigate("SelectProduct", {
+            productDetails: inputData.productDetails,
+            onSave: (updatedProductDetails) => {
+              setInputData((prev) => ({
+                ...prev,
+                productDetails: [...prev.productDetails, updatedProductDetails],
+              }));
+            },
+          });
+        }}
         activeOpacity={0.7}
       >
         <View style={styles.addButtonIcon}>
@@ -262,7 +218,6 @@ export default function CreateQuotation({ navigation, route }) {
     const isFilled = (obj) => {
       return Object.values(obj).every((value) => {
         if (Array.isArray(value)) return value.length > 0; // productDetails
-        // if (value && typeof value === "object") return isFilled(value); // nested objects
         return value !== "" && value !== null && value !== undefined;
       });
     };
@@ -270,16 +225,35 @@ export default function CreateQuotation({ navigation, route }) {
   }, [inputData]);
 
   useEffect(() => {
-    if (route.params){
-      setInputData(route.params.inputData)
+    if (route.params) {
+      setInputData(route.params.inputData);
     }
-  }, [])
+    (async () => {
+      const supplierDetails = JSON.parse(await getItemAsync("supplier"));
+      setInputData((prev) => ({
+        ...prev,
+        supplierDetails: supplierDetails[0] ||
+          supplierDetails || {
+            gstin: "",
+            firmName: "",
+            pancard: "",
+            email: "",
+            mobile: "",
+            address: "",
+            city: "",
+            state: "",
+            pincode: "",
+            image: "",
+          },
+      }));
+    })();
+  }, []);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" backgroundColor={Colors.accentGreen} />
 
-      {/* Header */}
+      {/* Header - Moved outside KeyboardAvoidingView */}
       <View style={styles.header}>
         <SafeAreaView edges={["top"]}>
           <View style={styles.headerTop}>
@@ -295,143 +269,245 @@ export default function CreateQuotation({ navigation, route }) {
           </View>
 
           <View style={styles.headerDataWrapper}>
-            {[
-              {
-                id: 1,
-                title: "Date",
-                data: "quotationDate",
-                placeholder: "Select",
-              },
-              {
-                id: 2,
-                title: "Prefix",
-                data: "quotationPrefix",
-                placeholder: "QT-",
-              },
-              {
-                id: 3,
-                title: "Number",
-                data: "quotationNumber",
-                placeholder: "001",
-              },
-            ].map((item) => (
-              <HeaderData
-                key={item.id}
-                title={item.title}
-                data={item.data}
-                placeholder={item.placeholder}
+            {/* DATE */}
+            <View style={styles.headerDataContainer}>
+              <Text style={styles.headerDataTitle}>Date</Text>
+
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => setCalendarOpen(true)}
+                activeOpacity={0.7}
+              >
+                {inputData.quotationDate === "" && (
+                  <CalendarIcon size={16} color="rgba(255,255,255,0.8)" />
+                )}
+                <Text style={styles.dateButtonText}>
+                  {inputData.quotationDate === ""
+                    ? "Select"
+                    : inputData.quotationDate}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* PREFIX */}
+            <View style={styles.headerDataContainer}>
+              <Text style={styles.headerDataTitle}>Prefix</Text>
+
+              <TextInput
+                placeholder="QT-"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                value={inputData.quotationPrefix}
+                onChangeText={(value) =>
+                  setInputData((prev) => ({
+                    ...prev,
+                    quotationPrefix: value ?? "",
+                  }))
+                }
+                blurOnSubmit={false}
+                onSubmitEditing={() => {}}
+                keyboardShouldPersistTaps="handled"
+                style={styles.headerDataInput}
               />
-            ))}
+            </View>
+
+            {/* NUMBER */}
+            <View style={styles.headerDataContainer}>
+              <Text style={styles.headerDataTitle}>Number</Text>
+
+              <TextInput
+                placeholder="001"
+                placeholderTextColor="rgba(255,255,255,0.5)"
+                value={String(inputData.quotationNumber)}
+                onChangeText={(value) =>
+                  setInputData((prev) => ({
+                    ...prev,
+                    quotationNumber: value.replace(/[^0-9]/g, ""), // numeric only
+                  }))
+                }
+                keyboardType="numeric"
+                blurOnSubmit={false}
+                onSubmitEditing={() => {}}
+                style={styles.headerDataInput}
+              />
+            </View>
           </View>
         </SafeAreaView>
       </View>
 
-      {/* Content */}
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      {/* Content - Wrapped in KeyboardAvoidingView */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <DetailCard
-          title="Supplier Details"
-          isEmpty={inputData.supplierDetails.firmName === ""}
-          data={inputData.supplierDetails}
-          onPress={() => {
-            navigation.navigate("SelectSupplier", {
-              supplierDetails: inputData.supplierDetails,
-              onSave: (updatedSupplier) => {
-                setInputData((prev) => ({
-                  ...prev,
-                  supplierDetails: updatedSupplier,
-                }));
-              },
-            });
-          }}
-          icon={UserPlus}
-          propertyName={"supplierDetails"}
-        />
-
-        <DetailCard
-          title="Buyer Details"
-          isEmpty={inputData.buyerDetails.companyName === ""}
-          onPress={() => {
-            navigation.navigate("SelectBuyer", {
-              buyerDetails: inputData.buyerDetails,
-              onSave: (updatedBuyer) => {
-                setInputData((prev) => ({
-                  ...prev,
-                  buyerDetails: updatedBuyer,
-                }));
-              },
-            });
-          }}
-          icon={UserPlus}
-          propertyName={"buyerDetails"}
-        />
-
-        <DetailCard
-          title="Contact Person"
-          isEmpty={inputData.contactPersonDetails.name === ""}
-          icon={UserPlus}
-          onPress={() => {
-            navigation.navigate("SelectContactPerson", {
-              contactPersonDetails: inputData.contactPersonDetails,
-              onSave: (updatedContactPersonDetails) => {
-                setInputData((prev) => ({
-                  ...prev,
-                  contactPersonDetails: updatedContactPersonDetails,
-                }));
-              },
-            });
-          }}
-          propertyName={"contactPersonDetails"}
-        />
-
-        <ProductDetailsCard />
-
-        <View style={styles.cardContainer}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Terms & Conditions</Text>
-          </View>
-          <TextInput
-            style={styles.termsInput}
-            multiline={true}
-            numberOfLines={4}
-            value={inputData.termsAndConditions}
-            onChangeText={(value) =>
-              setInputData((prev) => ({ ...prev, termsAndConditions: value }))
-            }
-            placeholder="Enter terms and conditions..."
-            placeholderTextColor="#999"
-            textAlignVertical="top"
-          />
-        </View>
-
-        <TouchableOpacity
-          disabled={!buttonEnable}
-          style={{...styles.saveButton, opacity: buttonEnable ? 1 : 0.6}}
-          activeOpacity={0.8}
-          onPress={async () => {
-            try{
-              setButtonEnabled(false)
-              addAndSave({propertyName: "quotation", newValue: inputData, propertyCheck: "quotationDate"})
-              navigation.navigate("ViewQuotation", {data: inputData})
-            }
-            catch(e){
-              Alert.alert("An error occured:", e)
-            }
-            finally{
-              setButtonEnabled(true)
-            }
-            
-            
-          }}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled" // Prevent keyboard dismissal on taps
         >
-          <Text style={styles.saveButtonText}>Save PDF</Text>
-        </TouchableOpacity>
+          <DetailCard
+            title="Supplier Details"
+            isEmpty={inputData.supplierDetails.firmName === ""}
+            data={inputData.supplierDetails}
+            onPress={() => {
+              navigation.navigate("AddSupplier", {
+                supplierDetails: inputData.supplierDetails,
+                onSave: (updatedSupplier) => {
+                  setInputData((prev) => ({
+                    ...prev,
+                    supplierDetails: updatedSupplier,
+                  }));
+                },
+              });
+            }}
+            icon={UserPlus}
+            propertyName={"supplierDetails"}
+          />
 
-        <View style={{ height: 20 }} />
-      </ScrollView>
+          <DetailCard
+            title="Client Details"
+            isEmpty={inputData.buyerDetails.companyName === ""}
+            onPress={() => {
+              navigation.navigate("SelectBuyer", {
+                buyerDetails: inputData.buyerDetails,
+                onSave: (updatedBuyer) => {
+                  setInputData((prev) => ({
+                    ...prev,
+                    buyerDetails: updatedBuyer,
+                  }));
+                },
+              });
+            }}
+            icon={UserPlus}
+            propertyName={"buyerDetails"}
+          />
+          <View style={styles.cardContainer}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Ship to (Details)</Text>
+            </View>
+            <View>
+              {[
+                "Not Required",
+                "Show Same as Client Details",
+                "Add Other Shipping Details",
+              ].map((ele, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setShipToDetails(ele)}
+                  style={styles.radioRow}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.radioOuter}>
+                    {shipToDetails === ele && (
+                      <View style={styles.radioInner} />
+                    )}
+                  </View>
+                  <Text style={styles.radioLabel}>{ele}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {shipToDetails === "Add Other Shipping Details" && (
+            <DetailCard
+              title="Shipping Details"
+              isEmpty={inputData.shipToDetails.name === ""}
+              icon={PlusIcon}
+              onPress={() => {
+                navigation.navigate("SelectShipTo", {
+                  shipToDetails: inputData.shipToDetails,
+                  onSave: (updatedShipToDetails) => {
+                    setInputData((prev) => ({
+                      ...prev,
+                      shipToDetails: updatedShipToDetails,
+                    }));
+                  },
+                });
+              }}
+              propertyName={"shipToDetails"}
+            />
+          )}
+
+          <ProductDetailsCard />
+
+          <View style={styles.cardContainer}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Terms & Conditions</Text>
+            </View>
+            {inputData.termsAndConditions === "" ? (
+              <TouchableOpacity
+                style={styles.addButton}
+                onPress={() => {
+                  navigation.navigate("SelectTermsAndConditions", {
+                    termsAndConditions: inputData.termsAndConditions,
+                    onSave: (updatedTermsAndConditions) => {
+                      setInputData((prev) => ({
+                        ...prev,
+                        termsAndConditions: updatedTermsAndConditions,
+                      }));
+                    },
+                  });
+                }}
+                activeOpacity={0.7}
+              >
+                <View style={styles.addButtonIcon}>
+                  <PlusIcon size={20} color={Colors.accentGreen} />
+                </View>
+                <Text style={styles.addButtonText}>
+                  Add Terms And Constions
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate("SelectTermsAndConditions", {
+                    termsAndConditions: inputData.termsAndConditions,
+                    onSave: (updatedTermsAndConditions) => {
+                      setInputData((prev) => ({
+                        ...prev,
+                        termsAndConditions: updatedTermsAndConditions,
+                      }));
+                    },
+                  });
+                }}
+              >
+                <Text style={{ paddingVertical: 8, paddingHorizontal: 10 }}>
+                  {inputData.termsAndConditions}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            disabled={!buttonEnable}
+            style={{
+              ...styles.saveButton,
+              opacity: buttonEnable ? 1 : 0.6,
+            }}
+            activeOpacity={0.8}
+            onPress={async () => {
+              try {
+                setButtonEnabled(false);
+                addAndSave({
+                  propertyName: "quotation",
+                  newValue: inputData,
+                  propertyCheck: "quotationDate",
+                });
+                navigation.navigate("ViewQuotation", { data: inputData });
+              } catch (e) {
+                Alert.alert("An error occurred:", e);
+              } finally {
+                setButtonEnabled(true);
+              }
+            }}
+          >
+            <Text style={styles.saveButtonText}>Save PDF</Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 20 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Calendar Modal */}
       <Modal
@@ -619,6 +695,36 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     letterSpacing: 0.2,
+  },
+  radioRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: Colors.accentGreen,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
+  },
+
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: Colors.accentGreen,
+  },
+
+  radioLabel: {
+    fontSize: 15,
+    color: "#333",
+    fontWeight: "500",
   },
   productsContainer: {
     padding: 16,

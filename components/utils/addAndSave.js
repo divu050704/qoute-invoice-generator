@@ -5,8 +5,19 @@ export default async function addAndSave({
   newValue,
   propertyCheck,
 }) {
-  let propertyValues = await getItemAsync(propertyName);
+  if ((propertyName === "supplier")){
+    await setItemAsync(propertyName, JSON.stringify(newValue));
+    return 
+  }
+  else if (propertyName === "termsandconditions"){
+    let propertyValues = await getItemAsync(propertyName);
+    propertyValues = propertyValues ? JSON.parse(propertyValues) : [];
+    propertyValues.push(newValue)
+    return 
 
+  }
+ 
+  let propertyValues = await getItemAsync(propertyName);
   // Convert to array or default to empty array
   propertyValues = propertyValues ? JSON.parse(propertyValues) : [];
   // Find existing item by unique key (name)
@@ -16,11 +27,13 @@ export default async function addAndSave({
       (item) => item[propertyCheck] === newValue[propertyCheck]
     );
   }
+  
   else{
     index = propertyValues.findIndex(
       (item) => ((item.quotationDate === newValue.quotationDate) && (item.quotationPrefix === newValue.quotationPrefix) && (item.quotationNumber === newValue.quotationNumber))
     );
   }
+
 
   if (index !== -1) {
     // Update existing

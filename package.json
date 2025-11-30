@@ -11,8 +11,10 @@
   "dependencies": {
     "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/elements": "^2.8.3",
+    "@react-navigation/material-top-tabs": "^7.4.5",
     "@react-navigation/native-stack": "^7.8.0",
     "expo": "~54.0.25",
+    "expo-image-picker": "~17.0.8",
     "expo-secure-store": "~15.0.7",
     "expo-sharing": "~14.0.7",
     "expo-status-bar": "~3.0.8",

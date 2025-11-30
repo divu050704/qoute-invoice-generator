@@ -7,10 +7,12 @@ import AddSupplier from "./components/screen/Quotation/Supplier/AddSupplier";
 import SelectSupplier from "./components/screen/Quotation/Supplier/SelectSupplier";
 import AddBuyer from "./components/screen/Quotation/Buyer/AddBuyer";
 import SelectBuyer from "./components/screen/Quotation/Buyer/SelectBuyer";
-import AddContactPerson from "./components/screen/Quotation/ContactPerson/AddContactPerson";
-import SelectContactPerson from "./components/screen/Quotation/ContactPerson/SelectContactPerson";
+import AddShipTo from "./components/screen/Quotation/ShipTo/AddShipTo";
+import SelectShipTo from "./components/screen/Quotation/ShipTo/SelectShipTo";
 import AddProducts from "./components/screen/Quotation/Product/AddProduct";
 import SelectProduct from "./components/screen/Quotation/Product/SelectProduct";
+import SelectTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/SelectTermsAndConditions";
+import AddTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/AddTermsAndConditions";
 import ViewQuotation from "./components/screen/Quotation/ViewQuotation";
 
 export default function App() {
@@ -54,14 +56,14 @@ export default function App() {
           component={SelectBuyer}
         />
         <Stack.Screen 
-          name="AddContactPerson"
+          name="AddShipTo"
           options={{headerShown: false}}
-          component={AddContactPerson}
+          component={AddShipTo}
         />
         <Stack.Screen 
-          name="SelectContactPerson"
+          name="SelectShipTo"
           options={{headerShown: false}}
-          component={SelectContactPerson}
+          component={SelectShipTo}
         />
         <Stack.Screen 
           name="AddProduct"
@@ -69,9 +71,13 @@ export default function App() {
           component={AddProducts}
         />
         <Stack.Screen 
-          name="SelectProduct"
+          name="SelectTermsAndConditions"
           options={{headerShown: false}}
-          component={SelectProduct}
+          component={SelectTermsAndConditions}
+        /><Stack.Screen 
+          name="AddTermsAndConditions"
+          options={{headerShown: false}}
+          component={AddTermsAndConditions}
         />
         <Stack.Screen 
           name="ViewQuotation"
