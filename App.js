@@ -14,6 +14,8 @@ import SelectProduct from "./components/screen/Quotation/Product/SelectProduct";
 import SelectTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/SelectTermsAndConditions";
 import AddTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/AddTermsAndConditions";
 import ViewQuotation from "./components/screen/Quotation/ViewQuotation";
+import SelectBankDetail from "./components/screen/Quotation/BankDetails/SelectBankDetails";
+import AddBankDetails from "./components/screen/Quotation/BankDetails/AddBankDetails";
 
 export default function App() {
   const Stack = createNativeStackNavigator();
@@ -71,6 +73,11 @@ export default function App() {
           component={AddProducts}
         />
         <Stack.Screen 
+          name="SelectProduct"
+          options={{headerShown: false}}
+          component={SelectProduct}
+        />
+        <Stack.Screen 
           name="SelectTermsAndConditions"
           options={{headerShown: false}}
           component={SelectTermsAndConditions}
@@ -78,6 +85,16 @@ export default function App() {
           name="AddTermsAndConditions"
           options={{headerShown: false}}
           component={AddTermsAndConditions}
+        />
+        <Stack.Screen 
+          name="SelectBankDetail"
+          options={{headerShown: false}}
+          component={SelectBankDetail}
+        />
+        <Stack.Screen 
+          name="AddBankDetails"
+          options={{headerShown: false}}
+          component={AddBankDetails}
         />
         <Stack.Screen 
           name="ViewQuotation"

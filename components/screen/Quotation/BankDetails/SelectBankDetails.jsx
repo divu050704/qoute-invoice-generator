@@ -18,106 +18,99 @@ import Colors from "../../../colors";
 import { useEffect, useMemo, useState } from "react";
 import { getItemAsync, setItemAsync } from "expo-secure-store";
 
-export default function SelectShipTo({ navigation, route }) {
+export default function SelectBankDetail({ navigation, route }) {
   const [search, setSearch] = useState("");
-  const { shipToDetails, onSave } = route.params || {};
-  const [savedShipTos, setSavedShipTos] = useState([]);
+  const { BankDetails, onSave } = route.params || {};
+  const [savedBankDetails, setSavedBankDetails] = useState([]);
 
-  async function getExistingShipTos() {
+  async function getExistingBankDetails() {
     try {
-      const shipToJson = await getItemAsync("shipTo");
-      if (!shipToJson) {
-        setSavedShipTos([]);
+      const BankDetailJson = await getItemAsync("bankDetails");
+      if (!BankDetailJson) {
+        setSavedBankDetails([]);
         return;
       }
-      const parsed = JSON.parse(shipToJson);
-      if (Array.isArray(parsed)) setSavedShipTos(parsed);
-      else setSavedShipTos([]);
+      const parsed = JSON.parse(BankDetailJson);
+      if (Array.isArray(parsed)) setSavedBankDetails(parsed);
+      else setSavedBankDetails([]);
     } catch (e) {
-      console.warn("Error parsing ship to details from secure store", e);
-      setSavedShipTos([]);
+      console.warn("Error parsing bankDetails from secure store", e);
+      setSavedBankDetails([]);
     }
   }
 
   useEffect(() => {
-    getExistingShipTos();
+    getExistingBankDetails();
   }, []);
 
-  async function persistShipTos(list) {
+  async function persistBankDetails(list) {
     try {
-      await setItemAsync("shipTo", JSON.stringify(list || []));
+      await setItemAsync("bankDetails", JSON.stringify(list || []));
     } catch (e) {
-      console.warn("Failed to persist ship To Details", e);
+      console.warn("Failed to persist bankDetails", e);
     }
   }
 
-  const filteredShipTos = useMemo(() => {
+  const filteredBankDetails = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return savedShipTos;
-    return savedShipTos.filter((s) => {
+    if (!q) return savedBankDetails;
+    return savedBankDetails.filter((s) => {
       if (!s) return false;
-      const companyName = (s.companyName || "").toLowerCase();
-      const gst = (s.gstin || "").toLowerCase();
-      const email = (s.email || "").toLowerCase();
-      const st = (s.state || "").toLowerCase();
+      const ifscCode = (s.ifscCode || "").toLowerCase();
+      const bankName = (s.branchName || "").toLowerCase();
+      const branchName = (s.branchName || "").toLowerCase();
+      const accountNumber = (s.accountNumber || "").toLowerCase();
+      const holderName = (s.holderName || "").toLowerCase();
       return (
-        companyName.includes(q) || gst.includes(q) || email.includes(q) || st.includes(q)
+        ifscCode.includes(q) || bankName.includes(q) || branchName.includes(q) || accountNumber.includes(q) || holderName.includes(q)
       );
     });
-  }, [search, savedShipTos]);
+  }, [search, savedBankDetails]);
 
-  const handleSelect = (buyer) => {
-    if (onSave) onSave(buyer);
+  const handleSelect = (bankDetails) => {
+    if (onSave) onSave(bankDetails);
     navigation.goBack();
   };
 
   // handle edit - open AddSupplier with initial data and update on save
-  const handleEdit = (buyer, originalIndex) => {
-    navigation.navigate("AddShipTo", {
-      shipToDetails: buyer,
-      onSave: (savedBuyer) => {
-        if (onSave) onSave(savedBuyer);
+  const handleEdit = (bankDetails, originalIndex) => {
+    navigation.navigate("AddBankDetails", {
+      bankDetails: bankDetails,
+      onSave: (savedBankDetail) => {
+        if (onSave) onSave(savedBankDetail);
       },
     });
   };
 
-  const BuyerDetailsComponent = ({ data, index, originalIndex }) => (
+  const BankDetailDetailsComponent = ({ data, index, originalIndex }) => (
     <View
-      style={styles.buyerCard}
-      key={`${data?.firmName ?? "buyer"}-${index}`}
+      style={styles.BankDetailCard}
+      key={`${data?.firmName ?? "bankDetails"}-${index}`}
     >
       <TouchableOpacity
         activeOpacity={0.85}
         onPress={() => handleSelect(data)}
-        style={styles.buyerTouchable}
+        style={styles.BankDetailTouchable}
       >
-        <View style={styles.buyerTop}>
+        <View style={styles.BankDetailTop}>
           <Text style={styles.firmName} numberOfLines={1}>
-            {data?.companyName || "—"}
+            {data?.accountNumber || "—"}
           </Text>
           <Text style={styles.smallText}>{data?.state || ""}</Text>
         </View>
 
-        <View style={styles.buyerRow}>
-          <View style={styles.buyerCol}>
-            <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{data?.email || "—"}</Text>
+        <View style={styles.BankDetailRow}>
+          <View style={styles.BankDetailCol}>
+            <Text style={styles.label}>IFSC</Text>
+            <Text style={styles.value}>{data?.ifscCode || "—"}</Text>
           </View>
 
-          <View style={styles.buyerCol}>
-            <Text style={styles.label}>GSTIN</Text>
-            <Text style={styles.value}>{data?.gstin || "—"}</Text>
+          <View style={styles.BankDetailCol}>
+            <Text style={styles.label}>Bank</Text>
+            <Text style={styles.value}>{data?.bankName || "—"}</Text>
           </View>
         </View>
 
-        <View style={[styles.buyerRow, { marginTop: 8 }]}>
-          <View style={styles.buyerColFull}>
-            <Text style={styles.label}>State</Text>
-            <Text style={styles.value} numberOfLines={2}>
-              {data?.state || "—"}
-            </Text>
-          </View>
-        </View>
       </TouchableOpacity>
 
       {/* Edit button on the right/top */}
@@ -143,23 +136,23 @@ export default function SelectShipTo({ navigation, route }) {
               <TouchableOpacity onPress={() => navigation.goBack()}>
                 <ArrowLeftIcon color={Colors.white} />
               </TouchableOpacity>
-              <Text style={styles.headerTitle}>Select Buyer</Text>
+              <Text style={styles.headerTitle}>Select Bank Details</Text>
             </View>
 
             <TouchableOpacity
               style={styles.createBtn}
               onPress={() => {
-                navigation.navigate("AddShipTo", {
-                  onSave: (savedShipTo) => {
+                navigation.navigate("AddBankDetails", {
+                  onSave: (savedBankDetail) => {
                     // add to list locally + call parent onSave if provided
-                    if (savedShipTo) {
-                      setSavedShipTos((prev) => {
-                        const next = [savedShipTo, ...(prev || [])];
-                        persistShipTos(next);
+                    if (savedBankDetail) {
+                      setSavedBankDetails((prev) => {
+                        const next = [savedBankDetail, ...(prev || [])];
+                        persistBankDetails(next);
                         return next;
                       });
                     }
-                    if (onSave) onSave(savedShipTo);
+                    if (onSave) onSave(savedBankDetail);
                   },
                 });
               }}
@@ -173,7 +166,7 @@ export default function SelectShipTo({ navigation, route }) {
             <SearchIcon color="#666" size={18} />
 
             <TextInput
-              placeholder="Search buyer, GSTIN, email, state..."
+              placeholder="Search holder name, ifsc, bank name..."
               value={search}
               onChangeText={setSearch}
               placeholderTextColor="#666"
@@ -193,30 +186,28 @@ export default function SelectShipTo({ navigation, route }) {
           style={styles.listContainer}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         >
-          {filteredShipTos.length === 0 ? (
+          {filteredBankDetails.length === 0 ? (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No Ship To Details found</Text>
+              <Text style={styles.emptyTitle}>No Bank Details found</Text>
               <Text style={styles.emptySub}>
-                {savedShipTos.length === 0
-                  ? "You don't have any buyers yet. Add one using + Add."
+                {savedBankDetails.length === 0
+                  ? "You don't have any Bank Details yet. Add one using + Add."
                   : `No results for "${search}"`}
               </Text>
             </View>
           ) : (
-            filteredShipTos.map((ele, i) => {
+            filteredBankDetails.map((ele, i) => {
               // find original index in savedSuppliers to allow proper update
-              const originalIndex = savedShipTos.findIndex(
+              const originalIndex = savedBankDetails.findIndex(
                 (s) =>
-                  (ele.gstin && s.gstin === ele.gstin) ||
-                  (ele.pancard && s.pancard === ele.pancard) ||
-                  (ele.firmName && s.firmName === ele.firmName)
+                  (ele.accountNumber && s.accountNumber === ele.accountNumber) 
               );
               return (
-                <BuyerDetailsComponent
+                <BankDetailDetailsComponent
                   data={ele}
                   index={i}
                   originalIndex={originalIndex}
-                  key={`buyer-${i}`}
+                  key={`bankDetails-${i}`}
                 />
               );
             })
@@ -295,7 +286,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
 
-  buyerCard: {
+  BankDetailCard: {
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 12,
@@ -313,11 +304,11 @@ const styles = StyleSheet.create({
     position: "relative",
   },
 
-  buyerTouchable: {
+  BankDetailTouchable: {
     // keep padding so content looks clickable
   },
 
-  buyerTop: {
+  BankDetailTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -337,17 +328,17 @@ const styles = StyleSheet.create({
     color: "#666",
   },
 
-  buyerRow: {
+  BankDetailRow: {
     flexDirection: "row",
     justifyContent: "space-between",
   },
 
-  buyerCol: {
+  BankDetailCol: {
     flex: 1,
     marginRight: 8,
   },
 
-  buyerColFull: {
+  BankDetailColFull: {
     flex: 1,
   },
 

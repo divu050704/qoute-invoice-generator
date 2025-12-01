@@ -1,7 +1,7 @@
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
   TextInput,
   Modal,
@@ -10,6 +10,8 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
+  StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -22,10 +24,11 @@ import {
 } from "lucide-react-native";
 import { StatusBar } from "expo-status-bar";
 import Colors from "../colors";
-import { useState, useEffect } from "react";
 import { Calendar } from "react-native-calendars";
 import addAndSave from "../utils/addAndSave";
 import { getItemAsync } from "expo-secure-store";
+import * as ImagePicker from "expo-image-picker";
+import RNFS from "react-native-fs";
 
 export default function CreateQuotation({ navigation, route }) {
   const [buttonEnable, setButtonEnabled] = useState(false);
@@ -57,29 +60,40 @@ export default function CreateQuotation({ navigation, route }) {
       gstTreatmentType: "",
     },
     shipToDetails: {
-      name: "",
+      gstin: "",
+      companyName: "",
       email: "",
-      phone: "",
+      mobileNumber: "",
+      address: "",
+      city: "",
+      pincode: "",
+      state: "",
+      gstTreatmentType: "",
     },
     productDetails: [],
     termsAndConditions: "",
+    bankDetails: {
+      ifscCode: "",
+      bankName: "",
+      branchName: "",
+      accountNumber: "",
+      holderName: "",
+    },
+    quotationValidity: "",
+    signature: "",
   });
 
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [calendarTarget, setCalendarTarget] = useState("quotationDate"); // "quotationDate" | "quotationValidity"
+
   const [shipToDetails, setShipToDetails] = useState("Not Required");
 
   const onDaySelect = (day) => {
-    setInputData((prev) => ({ ...prev, quotationDate: day.dateString }));
+    setInputData((prev) => ({ ...prev, [calendarTarget]: day.dateString }));
     setCalendarOpen(false);
   };
 
-  const DetailCard = ({
-    title,
-    isEmpty,
-    onPress,
-    icon: Icon,
-    propertyName,
-  }) => (
+  const DetailCard = ({ title, isEmpty, onPress, icon: Icon, propertyName }) => (
     <View style={styles.cardContainer}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{title}</Text>
@@ -221,6 +235,7 @@ export default function CreateQuotation({ navigation, route }) {
         return value !== "" && value !== null && value !== undefined;
       });
     };
+
     setButtonEnabled(isFilled(inputData));
   }, [inputData]);
 
@@ -229,25 +244,200 @@ export default function CreateQuotation({ navigation, route }) {
       setInputData(route.params.inputData);
     }
     (async () => {
-      const supplierDetails = JSON.parse(await getItemAsync("supplier"));
-      setInputData((prev) => ({
-        ...prev,
-        supplierDetails: supplierDetails[0] ||
-          supplierDetails || {
-            gstin: "",
-            firmName: "",
-            pancard: "",
-            email: "",
-            mobile: "",
-            address: "",
-            city: "",
-            state: "",
-            pincode: "",
-            image: "",
-          },
-      }));
+      try {
+        const supplierDetailsRaw = await getItemAsync("supplier");
+        const supplierDetails = supplierDetailsRaw ? JSON.parse(supplierDetailsRaw) : null;
+        setInputData((prev) => ({
+          ...prev,
+          supplierDetails:
+            (supplierDetails && (supplierDetails[0] || supplierDetails)) || {
+              gstin: "",
+              firmName: "",
+              pancard: "",
+              email: "",
+              mobile: "",
+              address: "",
+              city: "",
+              state: "",
+              pincode: "",
+              image: "",
+            },
+        }));
+      } catch (e) {
+        // ignore parse errors
+      }
     })();
   }, []);
+
+  useEffect(() => {
+    if (shipToDetails === "Show Same as Client Details") {
+      setInputData((prev) => ({
+        ...prev,
+        shipToDetails: prev.buyerDetails,
+      }));
+    }
+  }, [shipToDetails]);
+
+  const buildMarkedDates = () => {
+    const marks = {};
+    if (inputData.quotationDate) {
+      marks[inputData.quotationDate] = {
+        selected: true,
+        selectedColor: Colors.accentGreen,
+      };
+    }
+    if (inputData.quotationValidity) {
+      marks[inputData.quotationValidity] = {
+        selected: true,
+        selectedColor: "#FFA726",
+      };
+    }
+    return marks;
+  };
+
+  // ----------------------
+  // RNFS image helper
+  // ----------------------
+  const saveImageToDocumentDir = async (uri) => {
+    try {
+      if (!uri) return "";
+
+      // Normalize incoming URI
+      // RNFS functions accept plain paths on Android (without file://) for many operations.
+      const isFileUri = uri.startsWith("file://");
+      const isContentUri = uri.startsWith("content://");
+
+      // Ensure images folder exists
+      const imagesFolder = RNFS.DocumentDirectoryPath + "/images/";
+      const folderExists = await RNFS.exists(imagesFolder);
+      if (!folderExists) {
+        await RNFS.mkdir(imagesFolder);
+      }
+
+      // Determine extension
+      const extMatch = uri.match(/\.(\w+)(\?.*)?$/);
+      const ext = extMatch ? extMatch[1] : "jpg";
+      const fileName = `sig_${Date.now()}.${ext}`;
+      const destPath = imagesFolder + fileName; // no file:// prefix
+
+      // 1) Try move (works for file:// paths). Use path without file:// for RNFS.
+      try {
+        const fromPath = isFileUri ? uri.replace("file://", "") : uri;
+        await RNFS.moveFile(fromPath, destPath);
+        // Return file:// URI for Image component
+        return "file://" + destPath;
+      } catch (moveErr) {
+        // move failed (likely content:// or permission). Try copyFile (supports some android content URIs).
+        try {
+          await RNFS.copyFile(uri, destPath); // RNFS may accept content:// on some setups
+          return "file://" + destPath;
+        } catch (copyErr) {
+          // copy also failed — as a robust fallback, try reading as base64 and writing the file
+          try {
+            // RNFS.readFile supports content URIs on Android in many RNFS versions
+            const base64 = await RNFS.readFile(uri, "base64");
+            await RNFS.writeFile(destPath, base64, "base64");
+            return "file://" + destPath;
+          } catch (readErr) {
+            console.warn("saveImageToDocumentDir: all methods failed", {
+              moveErr,
+              copyErr,
+              readErr,
+            });
+            // fallback: return original URI so UI still shows something (though it may be temporary)
+            return uri;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("saveImageToDocumentDir unexpected error", e);
+      return uri;
+    }
+  };
+
+  // --- Signature (image picker) handlers ---
+  const pickSignature = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "Permission to access media library is required to pick a signature image."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        quality: 0.8,
+        aspect: [3, 2],
+      });
+
+      const pickedUri = result?.assets?.[0]?.uri ?? result?.uri;
+      if (pickedUri) {
+        const permanentUri = await saveImageToDocumentDir(pickedUri);
+        setInputData((prev) => ({ ...prev, signature: permanentUri }));
+      }
+    } catch (e) {
+      Alert.alert("Error", "Unable to pick image. " + String(e));
+    }
+  };
+
+  const takeSignatureWithCamera = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission required",
+          "Permission to access camera is required to take a signature image."
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.8,
+        aspect: [3, 2],
+      });
+
+      const cameraUri = result?.assets?.[0]?.uri ?? result?.uri;
+      if (cameraUri) {
+        const permanentUri = await saveImageToDocumentDir(cameraUri);
+        setInputData((prev) => ({ ...prev, signature: permanentUri }));
+      }
+    } catch (e) {
+      Alert.alert("Error", "Unable to open camera. " + String(e));
+    }
+  };
+
+  const removeSignature = () => {
+    Alert.alert("Remove Signature", "Do you want to remove the signature?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Remove",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            const current = inputData.signature;
+            if (current) {
+              // accept both file:// and plain path
+              const path = current.startsWith("file://")
+                ? current.replace("file://", "")
+                : current;
+              const exists = await RNFS.exists(path);
+              if (exists) {
+                await RNFS.unlink(path);
+              }
+            }
+          } catch (e) {
+            // ignore deletion errors
+          } finally {
+            setInputData((prev) => ({ ...prev, signature: "" }));
+          }
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.container}>
@@ -275,7 +465,10 @@ export default function CreateQuotation({ navigation, route }) {
 
               <TouchableOpacity
                 style={styles.dateButton}
-                onPress={() => setCalendarOpen(true)}
+                onPress={() => {
+                  setCalendarTarget("quotationDate");
+                  setCalendarOpen(true);
+                }}
                 activeOpacity={0.7}
               >
                 {inputData.quotationDate === "" && (
@@ -344,7 +537,6 @@ export default function CreateQuotation({ navigation, route }) {
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled" // Prevent keyboard dismissal on taps
         >
           <DetailCard
             title="Supplier Details"
@@ -399,9 +591,7 @@ export default function CreateQuotation({ navigation, route }) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.radioOuter}>
-                    {shipToDetails === ele && (
-                      <View style={styles.radioInner} />
-                    )}
+                    {shipToDetails === ele && <View style={styles.radioInner} />}
                   </View>
                   <Text style={styles.radioLabel}>{ele}</Text>
                 </TouchableOpacity>
@@ -412,7 +602,7 @@ export default function CreateQuotation({ navigation, route }) {
           {shipToDetails === "Add Other Shipping Details" && (
             <DetailCard
               title="Shipping Details"
-              isEmpty={inputData.shipToDetails.name === ""}
+              isEmpty={inputData.shipToDetails.companyName === ""}
               icon={PlusIcon}
               onPress={() => {
                 navigation.navigate("SelectShipTo", {
@@ -454,9 +644,7 @@ export default function CreateQuotation({ navigation, route }) {
                 <View style={styles.addButtonIcon}>
                   <PlusIcon size={20} color={Colors.accentGreen} />
                 </View>
-                <Text style={styles.addButtonText}>
-                  Add Terms And Constions
-                </Text>
+                <Text style={styles.addButtonText}>Add Terms And Constions</Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -477,6 +665,122 @@ export default function CreateQuotation({ navigation, route }) {
                 </Text>
               </TouchableOpacity>
             )}
+          </View>
+          <DetailCard
+            title="Bank Details"
+            isEmpty={inputData.bankDetails.holderName === ""}
+            onPress={() => {
+              navigation.navigate("SelectBankDetail", {
+                bankDetails: inputData.bankDetails,
+                onSave: (updatedBankDetails) => {
+                  setInputData((prev) => ({
+                    ...prev,
+                    bankDetails: updatedBankDetails,
+                  }));
+                },
+              });
+            }}
+            icon={PlusIcon}
+            propertyName={"bankDetails"}
+          />
+
+          {/* Quotation Validity card with calendar opener */}
+          <View style={styles.cardContainer}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Quotation Validity</Text>
+            </View>
+
+            <View style={styles.validityRow}>
+              <TouchableOpacity
+                style={styles.dateButton}
+                onPress={() => {
+                  setCalendarTarget("quotationValidity");
+                  setCalendarOpen(true);
+                }}
+                activeOpacity={0.7}
+              >
+                {inputData.quotationValidity === "" && (
+                  <CalendarIcon size={16} color="rgba(0,0,0,0.6)" />
+                )}
+                <Text
+                  style={[
+                    styles.dateButtonText,
+                    {
+                      color: inputData.quotationValidity ? "#333" : "rgba(0,0,0,0.5)",
+                      fontWeight: inputData.quotationValidity ? "700" : "600",
+                    },
+                  ]}
+                >
+                  {inputData.quotationValidity === ""
+                    ? "Select validity date"
+                    : inputData.quotationValidity}
+                </Text>
+              </TouchableOpacity>
+
+              {/* optional quick glance for quotation date */}
+              {inputData.quotationDate ? (
+                <Text style={{ marginLeft: 12, fontSize: 13, color: "#666" }}>
+                  Quotation: {inputData.quotationDate}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+
+          {/* Signature card */}
+          <View style={styles.cardContainer}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Signature</Text>
+            </View>
+
+            <View style={styles.signatureRow}>
+              {inputData.signature ? (
+                <>
+                  <Image source={{ uri: inputData.signature }} style={styles.signatureImage} />
+                  <View style={styles.signatureActions}>
+                    <TouchableOpacity
+                      style={styles.smallButton}
+                      onPress={() => {
+                        // re-pick from gallery
+                        pickSignature();
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.smallButtonText}>Change</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.smallButton, { backgroundColor: "#fff", borderWidth: 1, borderColor: Colors.warning }]}
+                      onPress={removeSignature}
+                      activeOpacity={0.7}
+                    >
+                      <TrashIcon size={16} color={Colors.warning} />
+                      <Text style={[styles.smallButtonText, { color: Colors.warning, marginLeft: 8 }]}>Remove</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.signatureEmpty}>
+                  <TouchableOpacity
+                    style={styles.signatureButton}
+                    onPress={pickSignature}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.addButtonIcon}>
+                      <PlusIcon size={18} color={Colors.accentGreen} />
+                    </View>
+                    <Text style={styles.addButtonText}>Pick Signature</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.signatureButton, { marginLeft: 12 }]}
+                    onPress={takeSignatureWithCamera}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={{ color: Colors.accentGreen, fontWeight: "700" }}>Use Camera</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           </View>
 
           <TouchableOpacity
@@ -512,7 +816,6 @@ export default function CreateQuotation({ navigation, route }) {
       {/* Calendar Modal */}
       <Modal
         visible={calendarOpen}
-        transparent
         animationType="fade"
         onRequestClose={() => setCalendarOpen(false)}
       >
@@ -523,7 +826,9 @@ export default function CreateQuotation({ navigation, route }) {
         <View style={styles.modalWrapper} pointerEvents="box-none">
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Date</Text>
+              <Text style={styles.modalTitle}>
+                {calendarTarget === "quotationDate" ? "Select Date" : "Select Validity"}
+              </Text>
               <TouchableOpacity
                 onPress={() => setCalendarOpen(false)}
                 style={styles.modalCloseButton}
@@ -535,16 +840,7 @@ export default function CreateQuotation({ navigation, route }) {
 
             <Calendar
               onDayPress={onDaySelect}
-              markedDates={
-                inputData.quotationDate
-                  ? {
-                      [inputData.quotationDate]: {
-                        selected: true,
-                        selectedColor: Colors.accentGreen,
-                      },
-                    }
-                  : {}
-              }
+              markedDates={buildMarkedDates()}
               theme={{
                 todayTextColor: Colors.accentGreen,
                 arrowColor: Colors.accentGreen,
@@ -558,6 +854,7 @@ export default function CreateQuotation({ navigation, route }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -640,6 +937,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
+    marginBottom: 12,
   },
   cardHeader: {
     padding: 16,
@@ -839,5 +1137,60 @@ const styles = StyleSheet.create({
     backgroundColor: "#f5f5f5",
     alignItems: "center",
     justifyContent: "center",
+  },
+
+  // new: validity row under the Quotation Validity card
+  validityRow: {
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+
+  // signature styles
+  signatureRow: {
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  signatureEmpty: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  signatureButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eee",
+  },
+  signatureImage: {
+    width: 140,
+    height: 80,
+    borderRadius: 8,
+    resizeMode: "cover",
+    backgroundColor: "#f0f0f0",
+  },
+  signatureActions: {
+    marginLeft: 12,
+    flex: 1,
+    gap: 10, 
+    justifyContent: "space-between",
+  },
+  smallButton: {
+    backgroundColor: Colors.accentGreen,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  smallButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    marginLeft: 6,
   },
 });

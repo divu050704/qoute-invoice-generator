@@ -234,6 +234,7 @@ export default function AddProducts({ navigation, route }) {
                     style={styles.picker}
                   >
                     <Picker.Item label="PCS" value="PCS" />
+                    <Picker.Item label="SQF" value="SQF" />
                     <Picker.Item label="KG" value="KG" />
                     <Picker.Item label="LITER" value="LITER" />
                     <Picker.Item label="BOX" value="BOX" />
