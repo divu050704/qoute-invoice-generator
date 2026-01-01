@@ -93,7 +93,13 @@ export default function CreateQuotation({ navigation, route }) {
     setCalendarOpen(false);
   };
 
-  const DetailCard = ({ title, isEmpty, onPress, icon: Icon, propertyName }) => (
+  const DetailCard = ({
+    title,
+    isEmpty,
+    onPress,
+    icon: Icon,
+    propertyName,
+  }) => (
     <View style={styles.cardContainer}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>{title}</Text>
@@ -230,8 +236,17 @@ export default function CreateQuotation({ navigation, route }) {
 
   useEffect(() => {
     const isFilled = (obj) => {
-      return Object.values(obj).every((value) => {
-        if (Array.isArray(value)) return value.length > 0; // productDetails
+      return Object.entries(obj).every(([key, value]) => {
+        // --- optional fields here ---
+        if (key === "signature") return true; 
+        if (key === "shipToDetails") return true; 
+        if (key === "bankDetails") return true
+        // --------------------------------
+
+        if (Array.isArray(value)) return value.length > 0;
+        if (typeof value === "object" && value !== null)
+          return Object.values(value).some((v) => v !== ""); // ensures nested objects are not fully empty
+
         return value !== "" && value !== null && value !== undefined;
       });
     };
@@ -246,22 +261,24 @@ export default function CreateQuotation({ navigation, route }) {
     (async () => {
       try {
         const supplierDetailsRaw = await getItemAsync("supplier");
-        const supplierDetails = supplierDetailsRaw ? JSON.parse(supplierDetailsRaw) : null;
+        const supplierDetails = supplierDetailsRaw
+          ? JSON.parse(supplierDetailsRaw)
+          : null;
         setInputData((prev) => ({
           ...prev,
-          supplierDetails:
-            (supplierDetails && (supplierDetails[0] || supplierDetails)) || {
-              gstin: "",
-              firmName: "",
-              pancard: "",
-              email: "",
-              mobile: "",
-              address: "",
-              city: "",
-              state: "",
-              pincode: "",
-              image: "",
-            },
+          supplierDetails: (supplierDetails &&
+            (supplierDetails[0] || supplierDetails)) || {
+            gstin: "",
+            firmName: "",
+            pancard: "",
+            email: "",
+            mobile: "",
+            address: "",
+            city: "",
+            state: "",
+            pincode: "",
+            image: "",
+          },
         }));
       } catch (e) {
         // ignore parse errors
@@ -358,7 +375,8 @@ export default function CreateQuotation({ navigation, route }) {
   // --- Signature (image picker) handlers ---
   const pickSignature = async () => {
     try {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const { status } =
+        await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
           "Permission required",
@@ -591,7 +609,9 @@ export default function CreateQuotation({ navigation, route }) {
                   activeOpacity={0.7}
                 >
                   <View style={styles.radioOuter}>
-                    {shipToDetails === ele && <View style={styles.radioInner} />}
+                    {shipToDetails === ele && (
+                      <View style={styles.radioInner} />
+                    )}
                   </View>
                   <Text style={styles.radioLabel}>{ele}</Text>
                 </TouchableOpacity>
@@ -644,7 +664,9 @@ export default function CreateQuotation({ navigation, route }) {
                 <View style={styles.addButtonIcon}>
                   <PlusIcon size={20} color={Colors.accentGreen} />
                 </View>
-                <Text style={styles.addButtonText}>Add Terms And Constions</Text>
+                <Text style={styles.addButtonText}>
+                  Add Terms And Constions
+                </Text>
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
@@ -706,7 +728,9 @@ export default function CreateQuotation({ navigation, route }) {
                   style={[
                     styles.dateButtonText,
                     {
-                      color: inputData.quotationValidity ? "#333" : "rgba(0,0,0,0.5)",
+                      color: inputData.quotationValidity
+                        ? "#333"
+                        : "rgba(0,0,0,0.5)",
                       fontWeight: inputData.quotationValidity ? "700" : "600",
                     },
                   ]}
@@ -735,7 +759,10 @@ export default function CreateQuotation({ navigation, route }) {
             <View style={styles.signatureRow}>
               {inputData.signature ? (
                 <>
-                  <Image source={{ uri: inputData.signature }} style={styles.signatureImage} />
+                  <Image
+                    source={{ uri: inputData.signature }}
+                    style={styles.signatureImage}
+                  />
                   <View style={styles.signatureActions}>
                     <TouchableOpacity
                       style={styles.smallButton}
@@ -749,12 +776,26 @@ export default function CreateQuotation({ navigation, route }) {
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                      style={[styles.smallButton, { backgroundColor: "#fff", borderWidth: 1, borderColor: Colors.warning }]}
+                      style={[
+                        styles.smallButton,
+                        {
+                          backgroundColor: "#fff",
+                          borderWidth: 1,
+                          borderColor: Colors.warning,
+                        },
+                      ]}
                       onPress={removeSignature}
                       activeOpacity={0.7}
                     >
                       <TrashIcon size={16} color={Colors.warning} />
-                      <Text style={[styles.smallButtonText, { color: Colors.warning, marginLeft: 8 }]}>Remove</Text>
+                      <Text
+                        style={[
+                          styles.smallButtonText,
+                          { color: Colors.warning, marginLeft: 8 },
+                        ]}
+                      >
+                        Remove
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </>
@@ -776,7 +817,11 @@ export default function CreateQuotation({ navigation, route }) {
                     onPress={takeSignatureWithCamera}
                     activeOpacity={0.7}
                   >
-                    <Text style={{ color: Colors.accentGreen, fontWeight: "700" }}>Use Camera</Text>
+                    <Text
+                      style={{ color: Colors.accentGreen, fontWeight: "700" }}
+                    >
+                      Use Camera
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -827,7 +872,9 @@ export default function CreateQuotation({ navigation, route }) {
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {calendarTarget === "quotationDate" ? "Select Date" : "Select Validity"}
+                {calendarTarget === "quotationDate"
+                  ? "Select Date"
+                  : "Select Validity"}
               </Text>
               <TouchableOpacity
                 onPress={() => setCalendarOpen(false)}
@@ -854,7 +901,6 @@ export default function CreateQuotation({ navigation, route }) {
     </View>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -1177,7 +1223,7 @@ const styles = StyleSheet.create({
   signatureActions: {
     marginLeft: 12,
     flex: 1,
-    gap: 10, 
+    gap: 10,
     justifyContent: "space-between",
   },
   smallButton: {

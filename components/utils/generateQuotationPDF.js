@@ -244,7 +244,7 @@ export const generateHTML = async (data) => {
 
         /* Product Table - use maximum width and tighter cells */
         .product-section{margin:8px 0; /* reduced margin to fit more content */ }
-        .price-table{width:100%; border-collapse:collapse; background:#fff; table-layout:fixed; word-wrap:break-word;}
+        .price-table{width:100%; border-collapse:collapse; background:#fff; table-layout:fixed; word-wrap:break-word;min-height: 30vh}
         .price-table th{
           background:#2d5f2e;
           color:#fff;
@@ -284,9 +284,9 @@ export const generateHTML = async (data) => {
         }
 
         /* Totals Section - align compactly on the right; expand numbers area */
-        .totals-row{display:flex; gap:12px; margin:12px 0; align-items:flex-start;}
+        .totals-row{display:flex; gap:12px; margin:12px 0; align-items:flex-start; border-width: 2px; border-color: #000;}
         .total-words{flex:1; border:1px solid #000; padding:10px; min-height:60px;}
-        .total-words-label{font-size:11px; font-weight:600; margin-bottom:6px; color:#000; font-style:italic;}
+        .total-words-label{font-size:11px; font-weight:600; margin-bottom:6px; color: #000; font-style:italic;}
         .total-words-text{font-size:9px; color:#000; line-height:1.3;}
 
         .total-numbers{border:1px solid #000; padding:10px; min-width:220px;}

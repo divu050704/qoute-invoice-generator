@@ -44,17 +44,14 @@ export default function AddSupplier({ navigation, route }) {
   const handleSave = async () => {
     // Validate required fields
     for (const field of inputFields) {
-      if (!formData[field.key] || formData[field.key].trim() === "") {
+     
+      if ((!formData[field.key] || formData[field.key].trim() === "") && field.required) {
         alert(`Please enter ${field.label}`);
         return;
       }
     }
 
-    if (!formData.image) {
-      alert("Please select a logo");
-      return;
-    }
-
+  
     addAndSave({
       propertyName: "supplier",
       newValue: formData,
@@ -89,6 +86,7 @@ export default function AddSupplier({ navigation, route }) {
       label: "Email",
       placeholder: "Enter email address",
       keyboardType: "email-address",
+      required: true
     },
     {
       key: "mobile",
@@ -96,16 +94,18 @@ export default function AddSupplier({ navigation, route }) {
       placeholder: "Enter mobile number",
       keyboardType: "phone-pad",
       maxLength: 10,
+      required: true
     },
-    { key: "address", label: "Address", placeholder: "Enter address" },
-    { key: "city", label: "City", placeholder: "Enter city" },
-    { key: "state", label: "State", placeholder: "Enter state" },
+    { key: "address", label: "Address", placeholder: "Enter address", required: true },
+    { key: "city", label: "City", placeholder: "Enter city", required: true },
+    { key: "state", label: "State", placeholder: "Enter state", required: true },
     {
       key: "pincode",
       label: "Pincode",
       placeholder: "Enter pincode",
       keyboardType: "numeric",
       maxLength: 6,
+      required: true
     },
   ];
 
@@ -251,7 +251,6 @@ export default function AddSupplier({ navigation, route }) {
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>
                   {"Logo"}
-                  {<Text style={styles.required}> *</Text>}
                 </Text>
 
                 <View style={styles.imagePickerContainer}>

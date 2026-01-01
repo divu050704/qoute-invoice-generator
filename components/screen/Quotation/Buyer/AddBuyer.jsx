@@ -46,9 +46,14 @@ export default function AddBuyer({ navigation, route }) {
 
   const handleSave = () => {
     // Validate required fields
-    if (!formData.companyName.trim()) {
-      alert("Please enter company name");
-      return;
+    for (const field of inputFields) {
+      if (
+        (!formData[field.key] || formData[field.key].trim() === "") &&
+        field.required
+      ) {
+        alert(`Please enter ${field.label}`);
+        return;
+      }
     }
 
     // Call the onSave callback to update parent screen
@@ -83,6 +88,7 @@ export default function AddBuyer({ navigation, route }) {
       label: "Email",
       placeholder: "Enter email address",
       keyboardType: "email-address",
+      required: true
     },
     {
       key: "mobileNumber",
@@ -90,16 +96,18 @@ export default function AddBuyer({ navigation, route }) {
       placeholder: "Enter mobile number",
       keyboardType: "phone-pad",
       maxLength: 10,
+      required: true
     },
-    { key: "address", label: "Address", placeholder: "Enter address" },
-    { key: "city", label: "City", placeholder: "Enter city" },
-    { key: "state", label: "State", placeholder: "Enter state" },
+    { key: "address", label: "Address", placeholder: "Enter address", required: true },
+    { key: "city", label: "City", placeholder: "Enter city", required: true  },
+    { key: "state", label: "State", placeholder: "Enter state", required: true  },
     {
       key: "pincode",
       label: "Pincode",
       placeholder: "Enter pincode",
       keyboardType: "numeric",
       maxLength: 6,
+      required: true 
     },
   ];
 
@@ -141,6 +149,7 @@ export default function AddBuyer({ navigation, route }) {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          bounces={false}
         >
           <View style={styles.formCard}>
             {inputFields.map((field, index) => (
@@ -266,6 +275,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 16,
+    flexGrow: 1
   },
   formCard: {
     backgroundColor: "#fff",
