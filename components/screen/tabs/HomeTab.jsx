@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FileText, Wallet, Sparkles } from "lucide-react-native";
-import Colors from "../../../colors";
+import Colors from "../../colors";
 import { getItemAsync } from "expo-secure-store";
 
 export default function HomeTab({ navigation }) {
@@ -78,7 +78,7 @@ export default function HomeTab({ navigation }) {
           icon={<Wallet size={20} color={Colors.accentGreen} />}
           title="Invoices"
           subtitle="Generate invoices quickly"
-          onPress={() => navigation.navigate("InvoiceMain")}
+          onPress={() => navigation.navigate("InvoiceScreen")}
         />
       </View>
     </SafeAreaView>

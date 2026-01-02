@@ -6,6 +6,8 @@ import CreateQuotation from "./components/screen/CreateQuation";
 import AddSupplier from "./components/screen/Quotation/Supplier/AddSupplier";
 import SelectSupplier from "./components/screen/Quotation/Supplier/SelectSupplier";
 import AddBuyer from "./components/screen/Quotation/Buyer/AddBuyer";
+import InvoiceScreen from "./components/screen/InvoiceScreen";
+import CreateInvoice from "./components/screen/CreateInvoice";
 import SelectBuyer from "./components/screen/Quotation/Buyer/SelectBuyer";
 import AddShipTo from "./components/screen/Quotation/ShipTo/AddShipTo";
 import SelectShipTo from "./components/screen/Quotation/ShipTo/SelectShipTo";
@@ -14,6 +16,7 @@ import SelectProduct from "./components/screen/Quotation/Product/SelectProduct";
 import SelectTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/SelectTermsAndConditions";
 import AddTermsAndConditions from "./components/screen/Quotation/TermsAndConditions/AddTermsAndConditions";
 import ViewQuotation from "./components/screen/Quotation/ViewQuotation";
+import ViewInvoice from "./components/screen/Quotation/ViewInvoice";
 import SelectBankDetail from "./components/screen/Quotation/BankDetails/SelectBankDetails";
 import AddBankDetails from "./components/screen/Quotation/BankDetails/AddBankDetails";
 
@@ -36,6 +39,16 @@ export default function App() {
           name="CreateQuotation"
           options={{headerShown: false}}
           component={CreateQuotation}
+        />
+        <Stack.Screen 
+          name="CreateInvoice"
+          options={{headerShown: false}}
+          component={CreateInvoice}
+        />
+        <Stack.Screen 
+          name="InvoiceScreen"
+          options={{headerShown: false}}
+          component={InvoiceScreen}
         />
         <Stack.Screen 
           name="AddSupplier"
@@ -100,6 +113,11 @@ export default function App() {
           name="ViewQuotation"
           options={{headerShown: false}}
           component={ViewQuotation}
+        />
+        <Stack.Screen 
+          name="ViewInvoice"
+          options={{headerShown: false}}
+          component={ViewInvoice}
         />
       </Stack.Navigator>
     </NavigationContainer>

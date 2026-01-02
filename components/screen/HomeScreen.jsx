@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
-import HomeTab from "./Quotation/tabs/HomeTab";
-import RecordTab from "./Quotation/tabs/RecordTab";
-import SettingTab from "./Quotation/tabs/SettingTab";
+import HomeTab from "./tabs/HomeTab";
+import RecordTab from "./tabs/RecordTab";
+import SettingTab from "./tabs/SettingTab";
 import { View, Text, TouchableOpacity, Animated, Platform } from "react-native";
 import { Home, FileText, Settings } from "lucide-react-native";
 import Colors from "../colors";
