@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // ADDED: setItemAsync to save changes
 import { getItemAsync, setItemAsync } from 'expo-secure-store'; 
 
-export default function RecordTab() {
+export default function RecordTab({ navigation }) {
   // --- 1. State Management ---
   const [activeType, setActiveType] = useState('Quotation'); 
   const [dateFilter, setDateFilter] = useState('All'); 
@@ -147,7 +147,7 @@ export default function RecordTab() {
 
     // B. Filter by Date
     if (dateFilter !== 'All') {
-      const itemDate = new Date(item.quotationDate || item.date);
+      const itemDate = new Date(item.quotationDate || item.invoiceDate);
       const today = new Date();
       
       if (dateFilter === 'Today') {
@@ -235,9 +235,11 @@ export default function RecordTab() {
     const client = (item.buyerDetails && item.buyerDetails.companyName) ? item.buyerDetails.companyName : "Unknown Client";
     const number = (item.quotationPrefix && item.quotationNumber) 
       ? `${item.quotationPrefix}-${item.quotationNumber}`
-      : "---";
-    const date = item.quotationDate || "---";
-    const amount = calculateGrandTotal(item);
+      : (item.invoicePrefix && item.invoiceNumber) 
+      ? `${item.invoicePrefix}-${item.invoiceNumber}`
+      : "--" ;
+    const date = item.quotationDate || item.invoiceDate || "---";
+    const amount = `₹${calculateGrandTotal(item)}`;
     const status = item.status || "Pending";
 
     const isPending = status.toLowerCase() === 'pending';
@@ -268,7 +270,7 @@ export default function RecordTab() {
         </View>
 
         {activeType === 'Quotation' && (
-          <TouchableOpacity style={styles.subCard}>
+          <TouchableOpacity style={styles.subCard} onPress={() => navigation.navigate("ViewInvoice", { data: item })}>
             <Text style={styles.subCardText}>Convert to Invoice</Text>
           </TouchableOpacity>
         )}
