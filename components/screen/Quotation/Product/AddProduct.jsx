@@ -73,7 +73,6 @@ export default function AddProducts({ navigation, route }) {
       // Calculate GST
       const gstRate = parseFloat(updated.gstRate) || 0;
       let gstAmount = 0;
-      
       if (updated.taxInclusive) {
         // Tax inclusive: extract tax from taxable amount
         gstAmount = (updated.taxableAmount * gstRate) / (100 + gstRate);
