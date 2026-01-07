@@ -124,8 +124,8 @@ export default function AddSupplier({ navigation, route }) {
 
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
-        quality: 0.8,
-        aspect: [1, 1],
+        quality: 1,
+        aspect: [3, 2],
       });
 
       if (!result.canceled) {
