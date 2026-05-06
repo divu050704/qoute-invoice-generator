@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "QuotePG",
+    "slug": "quote-pg",
+    "version": "1.0.0",
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B4F2E"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#0B4F2E"
+      },
+      "package": "com.quotepg",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.VIBRATE",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-splash-screen"
+    ],
+    "userInterfaceStyle": "light",
+    "extra": {
+      "eas": {
+        "projectId": "7fd9dcdb-f004-4eff-9243-79b4ae22601c"
+      }
+    },
+    "owner": "ashish_raushan",
+    "runtimeVersion": "1.0.0",
+    "ios": {}
+  }
+}
